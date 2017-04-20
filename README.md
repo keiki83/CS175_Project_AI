@@ -1,1 +1,1 @@
-# gh-skeleton
+# CS175 Project AI
