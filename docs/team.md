@@ -6,11 +6,11 @@ title:  Team
 # {{ page.title }}
 
 
-## USER 1
-***UCI Net ID***: ucinetid
+## Michael R. Callan III
+***UCI Net ID***: mcallan
 
-## USER 2
-***UCI Net ID***: ucinetid
+## Thomas Micheil Halstead
+***UCI Net ID***: halsteat
 
 ## USER 3
 ***UCI Net ID***: ucinetid
