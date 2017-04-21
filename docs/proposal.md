@@ -5,9 +5,9 @@ title: Proposal
 
 ## Summary of the Project
 <!---
-In a paragraph or so, mention the main idea behind your project. At the very least, you should have a sentencethat clearly explains the
-input/output semantics of your project, i.e. what information will it take as input, andwhat will it produce. Mention any applications,
-if any, for your project.)
+In a paragraph or so, mention the main idea behind your project. At the very least, you should have a sentence that 
+clearly explains the input/output semantics of your project, i.e. what information will it take as input, andwhat 
+will it produce. Mention any applications, if any, for your project.)
 --->
 placeholder
 
