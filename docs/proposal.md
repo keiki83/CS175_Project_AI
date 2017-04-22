@@ -40,4 +40,4 @@ of your group can absolutely not make any of the available times. In the proposa
 you have reserved the appointment for.
 Use the following link to make your appointment: https://calendly.com/sameersingh/office-hours
 --->
-Thursday April 27, 2017 1:30pm
+11:00am - Tuesday, May 2, 2017
