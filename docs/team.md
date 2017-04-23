@@ -12,5 +12,5 @@ title:  Team
 ## Thomas Micheil Halstead
 ***UCI Net ID***: halsteat
 
-## Jose Mari IV Catalasan
+## Jose Mari Catalasan IV
 ***UCI Net ID***: jcatalas
