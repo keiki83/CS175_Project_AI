@@ -9,7 +9,7 @@ In a paragraph or so, mention the main idea behind your project. At the very lea
 clearly explains the input/output semantics of your project, i.e. what information will it take as input, andwhat 
 will it produce. Mention any applications, if any, for your project.)
 --->
-Our team will be designing a Gladiator style environment for the AI to operate within. The AI will learn, via combat experience, to get the highest number of kills within a specified time window. The input will be the terrain surrounding the AI, as well as the position of the enemies. Enemies will vary in density and difficulty. The job of the AI is to decide which encounters it should fight and which it should avoid, while trying to not die and maximizing the number of kills.
+Our team will be designing a Gladiator style environment for the AI to operate within. The AI will learn, via combat experience, to get the highest number of kills within a specified time window. The input will be the terrain surrounding the AI, as well as the position of the enemies. The output will be an action for the AI to take. Enemies will vary in density and difficulty, and the job of the AI is to decide which encounters it should fight to maximize the number of kills and which it should avoid to try and stay alive. This AI could be used in a game to assist users in deciding the correct course of action in combat scenarios.
 
 ## AI/ML Algorithms
 <!--- 
@@ -18,7 +18,7 @@ have to be a detailed description of the algorithm, even the sub-area of the fie
 include “planning with dynamic programming”, “reinforcement learning with neural function approximator”,
 “deep learning for images”, “min-max tree search with pruning”, and so on.
 --->
-Reinforcement learning and shortest path algorithms.
+Model-Free Reinforcement learning and shortest path algorithms.
 
 ## Evaluation Plan
 <!--- 
@@ -30,7 +30,9 @@ the internals of the algorithm to verify it works, what’s your moonshot case, 
 you get there. Note that these are not promises, we’re not going to hold you to what you say here, but we want to
 see if you are able to think about evaluation of your project in a critical manner.
 --->
-The success of the project will be evaluated on two factors; the number of kills and the survivability of the character. The lowest score would be zero kills and death. The highest score will be based on calculating the maximum number of possible kills based on distance and time taken to kill zombies based on maximum damage per second. A satisfactory result will have kills and no deaths. An impressive result would be a score that surpasses a human player.
+The success of the project will be evaluated on two factors; the number of kills within a time limit and the survivability of the character. The lowest score would be zero kills and a quick death. We expect to improve the time spent alive as well as improve the number of kills in the allotted time. The highest score will be based on calculating the maximum number of possible kills based on distance and time taken to kill zombies based on maximum damage per second. A satisfactory result will have some kills and no deaths. An impressive result would be a score that surpasses a human player.
+
+We will verify that this AI Agent works by testing it in a series of controlled situations with varying amounts and difficulties of enemies. We will observe the actions of the AI Agent in each situation to verify that it is indeed learning the actions we anticipate it to learn. It would be a great success if the AI Agent is able to learn which enemies to avoid and which enemies it can defeat and defeating them in the most efficient way possible.
 
 ## Appointment with the Instructor
 <!---
