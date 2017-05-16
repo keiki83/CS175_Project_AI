@@ -19,14 +19,13 @@ if agent_host.receivedArgument("help"):
     print agent_host.getUsage()
     exit(0)
 
-# my_mission = MalmoPython.MissionSpec(missionXML, True) # load world
-# my_mission.forceWorldReset()    # force reset fixes back to back testing
+#load mission from file
 mission_file = './arena1.xml'
 with open(mission_file, 'r') as f:
  print "Loading mission from %s" % mission_file
  mission_xml = f.read()
  my_mission = MalmoPython.MissionSpec(mission_xml, True)
-
+my_mission.forceWorldReset()    # force reset fixes back to back testing
 my_mission_record = MalmoPython.MissionRecordSpec()
 
 # Attempt to start a mission:
