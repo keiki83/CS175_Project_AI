@@ -5,6 +5,10 @@
                 <Summary>CS175 Project AI</Summary>
               </About>
 
+              <ModSettings>
+                  <MsPerTick>20</MsPerTick>
+              </ModSettings>
+
               <ServerSection>
                 <ServerInitialConditions>
                   <Time>
@@ -35,6 +39,12 @@
                   </Inventory>
                 </AgentStart>
                 <AgentHandlers>
+                  <ChatCommands/>
+                  <ContinuousMovementCommands turnSpeedDegs="360"/>
+                  <AbsoluteMovementCommands/>
+                  <ObservationFromNearbyEntities>
+                      <Range name="entities" xrange="21" yrange="2" zrange="40" />
+                  </ObservationFromNearbyEntities>
                   <ObservationFromFullStats/>
                   <ContinuousMovementCommands turnSpeedDegs="180"/>
                 </AgentHandlers>
