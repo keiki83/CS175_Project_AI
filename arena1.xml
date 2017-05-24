@@ -43,10 +43,8 @@
                   <ContinuousMovementCommands turnSpeedDegs="360"/>
                   <AbsoluteMovementCommands/>
                   <ObservationFromNearbyEntities>
-                      <Range name="entities" xrange="21" yrange="2" zrange="40" />
+                    <Range name="entities" xrange="21" yrange="2" zrange="40" />
                   </ObservationFromNearbyEntities>
-                  <ObservationFromFullStats/>
-                  <ContinuousMovementCommands turnSpeedDegs="180"/>
                 </AgentHandlers>
               </AgentSection>
             </Mission>

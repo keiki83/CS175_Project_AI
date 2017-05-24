@@ -5,7 +5,6 @@ import time
 import random
 import json
 import math
-import erro
 #import Tkinter as tk   #for drawing gamestate on canvas
 from collections import namedtuple
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, variation, quantity, life')
@@ -113,8 +112,7 @@ while world_state.is_mission_running:
         current_reward = 0
         msg = world_state.observations[-1].text
         ob = json.loads(msg)
-        if "Yaw" in ob:
-                current_yaw = ob[u'Yaw']
+
         if "Life" in ob:
             life = ob[u'Life']
             if life < current_life:
@@ -123,6 +121,7 @@ while world_state.is_mission_running:
             current_life = life
         if "entities" in ob:
             entities = [EntityInfo(**k) for k in ob["entities"]]
+            current_yaw = findUs(entities).yaw
             #for ent in entities:
                 # if ent.life > 10:
             #store hp of entities in list X
@@ -132,13 +131,17 @@ while world_state.is_mission_running:
 
             # turn towards the nearest zombie
             #best_yaw = getNearestEntity(entities, current_yaw, current_life)
-            difference = zombie_yaw - current_yaw;
+            #difference = best_yaw - current_yaw;
+            difference = 120 - current_yaw;
             while difference < -180:
                 difference += 360;
             while difference > 180:
                 difference -= 360;
             difference /= 180.0;
-            agent_host.sendCommand("turn " + str(difference))
+            if difference == 0:
+                agent_host.sendCommand("turn 0")
+            else:
+                agent_host.sendCommand("turn " + str(difference))
         #by here we know the game state
         #choose action based on policy
             #go through all actions, see where it places you in the map and give a score based on enemy locations and wall locations
@@ -146,7 +149,6 @@ while world_state.is_mission_running:
         #update policy
         #change old state to new state
         #change old action to new action
-
     time.sleep(0.02)
 
 # mission has ended.
