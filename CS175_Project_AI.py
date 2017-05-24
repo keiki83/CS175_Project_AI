@@ -43,6 +43,20 @@ def findUs(entities):
         else:
             return ent
 
+def lookAtNearestEntity(entities):
+    us = findUs(entities)
+    closestEntity = 0
+    entityDistance = sys.float_info.max
+    for i,ent in enumerate(entities):
+        if ent.name == MOB_TYPE:
+            #check distance from us and get the lowest
+            dist = (ent.x - us.x)*(ent.x - us.x) + (ent.z - us.z)*(ent.z - us.z)
+            if(dist < entityDistance):
+                closestEntity = i
+                entityDistance = dist
+    best_yaw = math.degrees(math.atan2(entities[closestEntity].z - us.z, entities[closestEntity].x - us.x)) - 90
+    return best_yaw
+
 
 
 #start of execution
@@ -104,8 +118,10 @@ current_yaw = 0
 best_yaw = 0
 current_life = 0
 
+
 # Loop until mission ends:
 while world_state.is_mission_running:
+    agent_host.sendCommand("attack 1")
     world_state = agent_host.getWorldState()
     if world_state.number_of_observations_since_last_state > 0:
         #this is where the rewards are counted and the policy is updated
@@ -130,18 +146,15 @@ while world_state.is_mission_running:
             #store hp of entities in list Y
 
             # turn towards the nearest zombie
-            #best_yaw = getNearestEntity(entities, current_yaw, current_life)
-            #difference = best_yaw - current_yaw;
-            difference = 120 - current_yaw;
+            best_yaw = lookAtNearestEntity(entities);
+            difference = best_yaw - current_yaw;
+            #difference = 120 - current_yaw
             while difference < -180:
                 difference += 360;
             while difference > 180:
                 difference -= 360;
             difference /= 180.0;
-            if difference == 0:
-                agent_host.sendCommand("turn 0")
-            else:
-                agent_host.sendCommand("turn " + str(difference))
+            agent_host.sendCommand("turn " + str(difference))
         #by here we know the game state
         #choose action based on policy
             #go through all actions, see where it places you in the map and give a score based on enemy locations and wall locations
