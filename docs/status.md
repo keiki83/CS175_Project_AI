@@ -1,7 +1,7 @@
 ---
-2 layout: default
-3 title: Status
-4 ---
+layout: default
+title: Status
+---
 
 ## Project Summary
 <!--- things may have changed since proposal (even if they haven’t), write a short
