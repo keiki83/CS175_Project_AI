@@ -3,32 +3,15 @@ layout: default
 title:  Home
 ---
 
-_Add your text here_
+![Minecraft](https://i.ytimg.com/vi/oc4bXoDOBYs/maxresdefault.jpg)
+# Road Map
+* [Complete] Create the arena and environment
+* [Complete] Have Gladiator fight a single zombie
+* [WIP] Have Gladiator fight multiple zombies
+* [Incomplete] Vary the size of the environment
 
+# Showcase Video
+coming soon
 
-What's Markdown (`.md`)?
-
-Markdown is markup that lets you write hypertext (HTML) documents
-in easy-to-read and easy-to-write plain text.
-No angle brackets `<></>` required for
-paragraphs, lists, blockquotes, tables, etc.
-
-
-This is a paragraph (in Markdown). Some more
-text here.
-
-This is another paragraph.
-
-This is a list:
-
-- Orange
-- Apple
-- Blueberry
-
-
-
-Just getting started with Markdown?
-See the [HTML <-> Markdown Quick Reference (Cheat Sheet)][quickref].
-
-
-[quickref]: https://github.com/mundimark/quickrefs/blob/master/HTML.md
+# Useful Links
+[Fighting Zombies in Minecraft With Deep Reinforcement Learning by Udagawa et al](http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf)
