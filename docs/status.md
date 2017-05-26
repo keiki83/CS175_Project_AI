@@ -6,6 +6,7 @@ title: Status
 ## Project Summary
 <!--- things may have changed since proposal (even if they haven’t), write a short
 paragraph summarizing the goals of the project (updated/improved version from the proposal). --->
+The goal of Gladitor is to write an AI using SARSA algorithm, designed to fight against zombies. The AI will learn, via combat experience, to get the highest number of kills within a specified time window. The input will be the terrain surrounding the AI, as well as the position of the enemies. The output will be an action for the AI to take.
 
 ## Approach
 <!--- Give a detailed description of your approach, in a few paragraphs. You should summarize the
@@ -17,12 +18,14 @@ most of your approach is reproducible by a reader. I encourage you to use figure
 as I provided in the writeup for the first assignment (available here: http://sameersingh.org/courses/
 aiproj/sp17/assignments.html#assignment1). I recommend at least 2-3 paragraphs. --->
 
+
 ## Evaluation
 <!--- An important aspect of your project, as we mentioned in the beginning, is evaluating your
 project. Be clear and precise about describing the evaluation setup, for both quantitative and qualitative
 results. Present the results to convince the reader that you have a working implementation. Use plots, charts,
 tables, screenshots, figures, etc. as needed. I expect you will need at least a few paragraphs to describe each
 type of evaluation that you perform. --->
+
 
 ## Remaining Goals and Challenges
 <!--- In a few paragraphs, describe your goals for the next 2-3 weeks, when
@@ -33,3 +36,4 @@ propose some baselines (such as a hand-coded policy) that you did not get a chan
 want to compare against for the final submission. Finally, given your experience so far, describe some of the
 challenges you anticipate facing by the time your final report is due, how crippling you think it might be,
 and what you might do to solve them. --->
+
