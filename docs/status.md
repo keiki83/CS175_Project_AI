@@ -17,7 +17,9 @@ have, what does the reward function look like. A good guideline is to incorporat
 most of your approach is reproducible by a reader. I encourage you to use figures, as appropriate, for this,
 as I provided in the writeup for the first assignment (available here: http://sameersingh.org/courses/
 aiproj/sp17/assignments.html#assignment1). I recommend at least 2-3 paragraphs. --->
-We began by working on the statespace for the sarsa algorithm. What is required, what would we like, and what should be omitted. The statespace is crucial. Too few elements would cause the AI to make similiar actions for different situations, and too many elements would slow down the rate at which the AI is able to learn. We determined we would use an area of 5x5 around the agent and track the block type, as well as the players health, and position of the zombie. We eliminated the need for the agent to decide to attack or not by forcing the player to attack. The actions available to the player are move in 4 cardinal directions, as well as facing those directions.
+We began by working on the statespace for the sarsa algorithm. What is required, what would we like, and what should be omitted. The statespace is crucial. Too few elements would cause the AI to make similiar actions for different situations, and too many elements would slow down the rate at which the AI is able to learn. 
+
+We determined we would use an area of 5x5 around the agent and track the block type, as well as the players health, and position of the zombie. We eliminated the need for the agent to decide to attack or not by forcing the player to attack. The actions available to the agent are move in the four cardinal directions, and do not move.
 
 
 ## Evaluation
@@ -39,4 +41,5 @@ want to compare against for the final submission. Finally, given your experience
 challenges you anticipate facing by the time your final report is due, how crippling you think it might be,
 and what you might do to solve them. --->
 The prototype is limited because it not can not work in an environment without a flat floor. The AI can be improved by giving it the ability to be able to climb a single block which would allow it to navigate an environent more applicable to the default world of Minecraft. Block detection at height of the player would also be required so that it does not try to walk through a 1 block tall passageway.
+
 The current goal is to add functionality to have the agent try to flee from combat if it believes it is not going to win the encounter. This would require adding the ability for it to determine a safe escape route while avoiding other Zombies. Afterwhich, it would determine when to rengage combat.
