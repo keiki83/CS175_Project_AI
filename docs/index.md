@@ -3,7 +3,7 @@ layout: default
 title:  Home
 ---
 
-![Minecraft](https://i.ytimg.com/vi/oc4bXoDOBYs/maxresdefault.jpg=400x)
+![Minecraft](https://i.ytimg.com/vi/oc4bXoDOBYs/maxresdefault.jpg =400x)
 # Road Map
 * [Complete] Create the arena and environment
 * [Complete] Have Gladiator fight a single zombie
