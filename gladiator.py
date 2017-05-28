@@ -54,7 +54,7 @@ def perform(a):
 def is_terminal(state):
     return state[0] >= state[1]
 
-
+# generate the statespace for sarsa
 def generateStateSpace(grid, entities):
     dim = math.sqrt(len(grid))
     playerIndex = int(dim*(dim//2) + dim//2)
@@ -70,6 +70,21 @@ def generateStateSpace(grid, entities):
             if(entIndex >= 0 or entIndex < len(grid)):
                 grid[entIndex] = ent.name
     return grid
+
+# get best action to take
+def getAction(q_table, state):
+    action = 0
+    value = float('-inf')
+    for key in Q:
+        if(key[0] == state and q_table[key] > value):
+            action = key[1]
+            value = q_table[key]
+    return action
+
+# perform action in game for agent
+def performAction(agent_host, action):
+
+    return
 
 
 #helper functions
@@ -199,17 +214,13 @@ while world_state.is_mission_running:
 			entities = [EntityInfo(**k) for k in ob["entities"]]
 
 		# by here we know the game state
-		# arsa starts here
+		# sarsa starts here
         grid = load_grid(world_state)
         s = generateStateSpace(grid, entities)
-        # sarsa_trial(s, actions, perform, is_terminal, q_table = {}, alpha=0.5, gamma=0.9, epsilon = 0.2)
         state(0,500)
-        sarsa_trial(s, actions, perform, is_terminal, state,  q_table)
+        q_table = sarsa_trial(s, actions, perform, is_terminal, state,  q_table)
+        performAction(agent_host, getAction(q_table, s))
 
-        # for ent in entities:
-            # check entities
-
-        # actions carries out here
 
         # turn towards the nearest zombie
         difference = lookAtNearestEntity(entities)
