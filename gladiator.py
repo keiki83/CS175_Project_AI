@@ -81,9 +81,13 @@ def getAction(q_table, state):
             value = q_table[key]
     return action
 
+
 # perform action in game for agent
 def performAction(agent_host, action):
-
+    if (action == "nothing"):
+        return
+    else:
+        agent_host.sendCommand(action)
     return
 
 
