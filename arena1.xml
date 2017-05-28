@@ -33,7 +33,7 @@
               </ServerSection>
 
               <AgentSection mode="Survival">
-                <Name>CS175_Project_AI</Name>
+                <Name>Gladiator</Name>
                 <AgentStart>
                   <Placement x="0" y="64" z="5" yaw="0"/>
                   <Inventory>
@@ -45,8 +45,14 @@
                   <ContinuousMovementCommands turnSpeedDegs="360"/>
                   <AbsoluteMovementCommands/>
                   <ObservationFromNearbyEntities>
-                    <Range name="entities" xrange="21" yrange="2" zrange="40" />
+                    <Range name="entities" xrange="10" yrange="2" zrange="10" />
                   </ObservationFromNearbyEntities>
+                  <ObservationFromGrid>
+                      <Grid name="floorAll">
+                        <min x="-10" y="0" z="-10"/>
+                        <max x="10" y="-0" z="10"/>
+                      </Grid>
+                  </ObservationFromGrid>
                 </AgentHandlers>
               </AgentSection>
             </Mission>

@@ -6,6 +6,7 @@ import random
 import json
 import math
 import sarsa
+
 #import Tkinter as tk   #for drawing gamestate on canvas
 from collections import namedtuple
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, variation, quantity, life')
@@ -15,7 +16,33 @@ actions = ["movenorth 1", "movesouth 1", "movewest 1", "moveeast 1"]
 
 #define parameters here
 MOB_TYPE = "Zombie"
+AGENT = "Gladiator"
 
+def distance(playerLoc, ent):
+    # helper function for reward()
+    return math.sqrt((ent.x - playerLoc[0])**2 + (ent.z - playerLoc[1])**2)
+
+def reward(entities,playerLoc):
+	# reward is 45 for being at same location as the entity, reward is 1 for
+    # maximum agro range of entity Distance reward is less than 1 for distances
+    # greater than agro range reward is 0 if no entity detected
+    closestMob = Null
+    dist = float('inf')
+    for ent in entities:
+        if(closestMob == Null and ent.name != AGENT):
+            closetMob == ent
+            continue
+        if(distance(playerLoc, ent) < dist and ent.name == MOB_TYPE):
+            closestMob = ent
+            dist = distance(playerLoc, ent)
+    reward = 0
+    if(closestMob == Null):
+        return reward
+	if(distance(playerLoc,ent) == 0):
+		reward = 45
+	else:
+		reward = 45/distance(playerLoc,ent)
+	return reward
 
 #helper functions
 def findUs(entities):
@@ -46,6 +73,19 @@ def lookAtNearestEntity(entities):
 	difference /= 180.0;
 	return difference
 
+def load_grid(world_state):
+    while world_state.is_mission_running:
+        time.sleep(0.1)
+        world_state = agent_host.getWorldState()
+        if len(world_state.errors) > 0:
+            raise AssertionError('Could not load grid.')
+        if world_state.number_of_observations_since_last_state > 0:
+            msg = world_state.observations[-1].text
+            observations = json.loads(msg)
+            grid = observations.get(u'floorAll', 0)
+            break
+    return grid
+
 
 
 #start of execution
@@ -68,9 +108,9 @@ if agent_host.receivedArgument("help"):
 #load mission from file
 mission_file = './arena1.xml'
 with open(mission_file, 'r') as f:
- print "Loading mission from %s" % mission_file
- mission_xml = f.read()
- my_mission = MalmoPython.MissionSpec(mission_xml, True)
+	print "Loading mission from %s" % mission_file
+	mission_xml = f.read()
+	my_mission = MalmoPython.MissionSpec(mission_xml, True)
 my_mission.forceWorldReset()    # force reset fixes back to back testing
 my_mission_record = MalmoPython.MissionRecordSpec()
 
@@ -112,6 +152,9 @@ current_life = 0
 while world_state.is_mission_running:
 	agent_host.sendCommand("attack 1")
 	world_state = agent_host.getWorldState()
+
+	grid = load_grid(world_state)
+
 	if world_state.number_of_observations_since_last_state > 0:
 		#this is where the rewards are counted and the policy is updated
 		current_reward = 0
