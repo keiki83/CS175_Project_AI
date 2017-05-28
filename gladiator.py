@@ -12,20 +12,18 @@ from collections import namedtuple
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, variation, quantity, life')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, 0)
 
-actions = ["movenorth 1", "movesouth 1", "movewest 1", "moveeast 1"]
+actions = ["movenorth 1", "movesouth 1", "movewest 1", "moveeast 1", "nothing"]
 
 #define parameters here
 MOB_TYPE = "Zombie"
 AGENT = "Gladiator"
 
-def distance(playerLoc, ent):
-    # helper function for reward()
-    return math.sqrt((ent.x - playerLoc[0])**2 + (ent.z - playerLoc[1])**2)
+# Sarsa Related Functions
 
-def reward(entities,playerLoc):
-	# reward is 45 for being at same location as the entity, reward is 1 for
-    # maximum agro range of entity Distance reward is less than 1 for distances
-    # greater than agro range reward is 0 if no entity detected
+# reward is 45 for being at same location as the entity, reward is 1 for
+# maximum agro range of entity Distance reward is less than 1 for distances
+# greater than agro range reward is 0 if no entity detected
+def calculateReward(entities,playerLoc):
     closestMob = Null
     dist = float('inf')
     for ent in entities:
@@ -43,6 +41,36 @@ def reward(entities,playerLoc):
 	else:
 		reward = 45/distance(playerLoc,ent)
 	return reward
+
+
+def perform(a):
+    reward = Null
+    s_prime = Null
+    actions = Null
+
+    return reward, s_prime, actions
+
+# controls maximum itterations of sarsa_trial
+def is_terminal(state):
+    return state[0] >= state[1]
+
+
+def generateStateSpace(grid, entities):
+    dim = math.sqrt(len(grid))
+    playerIndex = int(dim*(dim//2) + dim//2)
+    agent  = 0
+    for ent in entities:
+        if ent.name == AGENT:
+            agent = ent
+            break
+    grid[playerIndex] = player.name
+    for ent in entities:
+        if ent.name == MOB_TYPE:
+            entIndex = int(playerIndex + dim*(ent.z-player.z) + (ent.x - player.x))
+            if(entIndex >= 0 or entIndex < len(grid)):
+                grid[entIndex] = ent.name
+    return grid
+
 
 #helper functions
 def findUs(entities):
@@ -147,16 +175,16 @@ current_yaw = 0
 best_yaw = 0
 current_life = 0
 
+q_table = {}
+
 
 # Loop until mission ends:
 while world_state.is_mission_running:
 	agent_host.sendCommand("attack 1")
 	world_state = agent_host.getWorldState()
 
-	grid = load_grid(world_state)
-
 	if world_state.number_of_observations_since_last_state > 0:
-		#this is where the rewards are counted and the policy is updated
+		# this is where the rewards are counted and the policy is updated
 		current_reward = 0
 		msg = world_state.observations[-1].text
 		ob = json.loads(msg)
@@ -165,21 +193,27 @@ while world_state.is_mission_running:
 			life = ob[u'Life']
 			if life < current_life:
 				agent_host.sendCommand("chat aaaaaaaaargh!!!")
-				#do something with rewards
+				# do something with rewards
 			current_life = life
 		if "entities" in ob:
 			entities = [EntityInfo(**k) for k in ob["entities"]]
 
-		#by here we know the game state
-		#Sarsa starts here
+		# by here we know the game state
+		# arsa starts here
+        grid = load_grid(world_state)
+        s = generateStateSpace(grid, entities)
+        # sarsa_trial(s, actions, perform, is_terminal, q_table = {}, alpha=0.5, gamma=0.9, epsilon = 0.2)
+        state(0,500)
+        sarsa_trial(s, actions, perform, is_terminal, state,  q_table)
 
-		#for ent in entities:
-			#check entities
+        # for ent in entities:
+            # check entities
 
-		# actions carries out here
-		# turn towards the nearest zombie
-		difference = lookAtNearestEntity(entities);
-		agent_host.sendCommand("turn " + str(difference))
+        # actions carries out here
+
+        # turn towards the nearest zombie
+        difference = lookAtNearestEntity(entities)
+        agent_host.sendCommand("turn " + str(difference))
 
 	time.sleep(0.02) #end of while loop
 
