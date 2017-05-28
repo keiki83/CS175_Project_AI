@@ -5,6 +5,7 @@ import time
 import random
 import json
 import math
+import sarsa
 #import Tkinter as tk   #for drawing gamestate on canvas
 from collections import namedtuple
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, variation, quantity, life')
@@ -15,25 +16,6 @@ actions = ["movenorth 1", "movesouth 1", "movewest 1", "moveeast 1"]
 #define parameters here
 MOB_TYPE = "Zombie"
 
-
-
-
-# sarsa function
-def SARSA():
-	# alpha = learning rate (0-1)   0: learn nothing, 1: recent only
-	# gamma = discount factor (0-1) 0: current rewards only, 1: long-term reward
-
-	# Initialize Q(s,a) arbitrarily
-	# Repeat (for each episode):
-		# Initalize s
-		# Repeat (for each step of episode):
-			# Choose a from s using policy derived from Q (e.g., epsilon-greedy)
-			# Take action a, observe r, s'
-			# Q[s,a] = q[s,a] + alpha*(r + gamma*Q[s',a'] - Q[s,a])
-			# s = s'
-			# a= a'
-		# until s is terminal
-	return
 
 #helper functions
 def findUs(entities):
