@@ -13,7 +13,7 @@ EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, \
     variation, quantity, life')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, 0)
 
-actions = ["movenorth 1", "movesouth 1", "movewest 1", "moveeast 1", "nothing"]
+actions = ["movenorth 1", "movesouth 1", "moveeast 1", "movewest 1", "nothing"]
 
 # define parameters here
 MOB_TYPE = "Zombie"
@@ -37,19 +37,112 @@ def calculateReward(entities, playerLoc):
     reward = 0
     if(closestMob == Null):
         return reward
-	if(distance(playerLoc,ent) == 0):
+	if(distance(playerLoc, ent) == 0):
 		reward = 45
     else:
         reward = 45/distance(playerLoc, ent)
     return reward
 
 
-def perform(a):
-    reward = Null
-    s_prime = Null
-    actions = Null
+# helper function
+def isAir(s, actionIndex):
+    if(actionIndex >= 0 and actionIndex < len(s_prime) and
+            s[actionIndex] == "air"):
+        return True
+    else:
+        return False
 
-    return reward, s_prime, actions
+
+def swapIndex(s, fromIndex, toIndex):
+    temp = s[toIndex]
+    s[toIndex] = s[fromIndex]
+    s[fromIndex] = s[toIndex]
+    return s
+
+
+def availableActions(s_prime):
+    actions_prime = []
+    dim = math.sqrt(s_prime)
+
+    # locate agent
+    agentIndex = -1
+    for i in s_prime:
+        if(i == AGENT):
+            agentIndex = i
+            break
+
+    offset = [-dim, dim, 1, -1]  # north, south, east, west
+    possibleAction = []
+    for i in range(0, len(actions)):
+        if(isAir(s_prime, agentIndex + offset[i])):
+            possibleAction.append(actions[i]-1)
+    possibleAction.append(actions[len(actions[i] - 1)])
+
+    return possibleAction
+
+
+def perform(s,action):
+    # perform = function which takes an action as a parameter and returns:
+    #    reward, s_prime, valid actions from s_prime
+    # NOTES: modify s_prime array by action
+    #        do not allow a move into a non air block, penalize
+    #        north = -z, south = +z inc/dec by dim
+    #        east = +x, west = -x inc/dec by 1
+    reward = 0
+    s_prime = s
+    actions_prime = actions
+    dim = math.sqrt(s_prime)
+
+    # locate agent
+    agentIndex = -1
+    for i in s_prime:
+        if(i == AGENT):
+            agentIndex = i
+            break
+
+    # carry out action
+    if(action != "nothing"):
+        if(action == "movenorth 1"):  # -z axis (-dim)
+            actionIndex = agentIndex - dim
+            if(isAir(s_prime, actionIndex)):
+                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
+                # calculate reward
+                reward = 1  # place holder
+            else:
+                # penalize e.g. move into zombie / move into wall
+                reward = -1  # place holder
+        if(action == "movesouth 1"):  # +z axis (+dim)
+            actionIndex = agentIndex + dim
+            if(isAir(s_prime, actionIndex)):
+                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
+                # calculate reward
+                reward = 1  # place holder
+            else:
+                # penalize e.g. move into zombie / move into wall
+                reward = -1  # place holder
+        if(action == "moveeast 1"):  # +x axis (+1)
+            actionIndex = agentIndex + 1
+            if(isAir(s_prime, actionIndex)):
+                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
+                # calculate reward
+                reward = 1  # place holder
+            else:
+                # penalize e.g. move into zombie / move into wall
+                reward = -1  # place holder
+        if(action == "movewest 1"):  # -x axis (-1)
+            actionIndex = agentIndex - 1
+            if(isAir(s_prime, actionIndex)):
+                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
+                # calculate reward
+                reward = 1  # place holder
+            else:
+                # penalize e.g. move into zombie / move into wall
+                reward = -1  # place holder
+
+    # determine available movements
+    actions_prime = availableActions(s_prime)
+
+    return reward, s_prime, actions_prime
 
 # controls maximum itterations of sarsa_trial
 def is_terminal(state):
@@ -208,10 +301,9 @@ while world_state.is_mission_running:
 		# Sarsa starts here
 
         s = generateStateSpace(grid, entities)
-        print s
         state = (0,500)
-        # q_table = sarsa_trial(s, actions, perform, is_terminal, state, q_table)
-        # performAction(agent_host, getAction(q_table, s))
+        q_table = sarsa_trial(s, actions, perform, is_terminal, state, q_table)
+        performAction(agent_host, getAction(q_table, s))
 
         # for ent in entities:
             # check entities

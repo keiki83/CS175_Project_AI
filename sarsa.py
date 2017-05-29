@@ -30,7 +30,7 @@ def sarsa_trial(s, actions, perform, is_terminal, state, q_table = {}, alpha=0.5
 
     a = choose_e_greedy(s, actions, q_table, epsilon)
     while not is_terminal(state):
-        reward, s_prime, actions = perform(a)
+        reward, s_prime, actions = perform(s,a)
         a_prime = choose_e_greedy(s_prime, actions, q_table, epsilon)
         q_table[(s,a)] = q_table[(s,a)] + alpha * (reward + (gamma * q_lookup(q_table, s_prime, a_prime)) - q_table[(s,a)])
         s = s_prime
