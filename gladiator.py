@@ -21,6 +21,11 @@ AGENT = "Gladiator"
 
 # Sarsa Related Functions
 
+# calculateReward helper function
+def distance(playerLoc, ent):
+    # helper function for reward()
+    return math.sqrt((ent.x - playerLoc[0])**2 + (ent.z - playerLoc[1])**2)
+
 # reward is 45 for being at same location as the entity, reward is 1 for
 # maximum agro range of entity Distance reward is less than 1 for distances
 # greater than agro range reward is 0 if no entity detected
@@ -46,7 +51,7 @@ def calculateReward(entities, playerLoc):
 
 # helper function
 def isAir(s, actionIndex):
-    if(actionIndex >= 0 and actionIndex < len(s_prime) and
+    if(actionIndex >= 0 and actionIndex < len(s) and
             s[actionIndex] == "air"):
         return True
     else:
@@ -62,23 +67,21 @@ def swapIndex(s, fromIndex, toIndex):
 
 def availableActions(s_prime):
     actions_prime = []
-    dim = math.sqrt(s_prime)
+    dim = int(math.sqrt(len(s_prime)))
 
     # locate agent
     agentIndex = -1
-    for i in s_prime:
-        if(i == AGENT):
+    for i in range(0,len(s_prime)):
+        if(s_prime[i] == AGENT):
             agentIndex = i
             break
-
     offset = [-dim, dim, 1, -1]  # north, south, east, west
-    possibleAction = []
-    for i in range(0, len(actions)):
+    for i in range(0, len(actions)-1):
         if(isAir(s_prime, agentIndex + offset[i])):
-            possibleAction.append(actions[i]-1)
-    possibleAction.append(actions[len(actions[i] - 1)])
+            actions_prime.append(actions[i])
+    actions_prime.append(actions[len(actions) - 1])
 
-    return possibleAction
+    return actions_prime
 
 
 def perform(s,action):
@@ -89,14 +92,14 @@ def perform(s,action):
     #        north = -z, south = +z inc/dec by dim
     #        east = +x, west = -x inc/dec by 1
     reward = 0
-    s_prime = s
+    s_prime = list(s)
     actions_prime = actions
-    dim = math.sqrt(s_prime)
+    dim = int(math.sqrt(len(s_prime)))
 
     # locate agent
     agentIndex = -1
-    for i in s_prime:
-        if(i == AGENT):
+    for i in range(0,len(s_prime)):
+        if(s_prime[i] == AGENT):
             agentIndex = i
             break
 
@@ -144,9 +147,9 @@ def perform(s,action):
 
     return reward, s_prime, actions_prime
 
-# controls maximum itterations of sarsa_trial
-def is_terminal(state):
-    return state[0] >= state[1]
+# # controls maximum itterations of sarsa_trial
+# def is_terminal(state):
+#     return (state[0] >= state[1])
 
 # generate the statespace for sarsa
 def generateStateSpace(grid, entities):
@@ -169,8 +172,8 @@ def generateStateSpace(grid, entities):
 def getAction(q_table, state):
     action = 0
     value = float('-inf')
-    for key in Q:
-        if(key[0] == state and q_table[key] > value):
+    for key in q_table:
+        if(key[0] == repr(state) and q_table[key] > value):
             action = key[1]
             value = q_table[key]
     return action
@@ -234,7 +237,7 @@ if agent_host.receivedArgument("help"):
 	exit(0)
 
 # load mission from file
-mission_file = './arena1.xml'
+mission_file = './arena2.xml'
 with open(mission_file, 'r') as f:
     print "Loading mission from %s" % mission_file
     mission_xml = f.read()
@@ -276,10 +279,13 @@ best_yaw = 0
 current_life = 0
 
 q_table = {}
+while(True):
+    agent_host.sendCommand('movenorth 1')
+    time.sleep(1)
 
 # Loop until mission ends:
 while world_state.is_mission_running:
-    agent_host.sendCommand("attack 1")
+    #agent_host.sendCommand("attack 1")
     world_state = agent_host.getWorldState()
     if world_state.number_of_observations_since_last_state > 0:
         # this is where the rewards are counted and the policy is updated
@@ -301,9 +307,12 @@ while world_state.is_mission_running:
 		# Sarsa starts here
 
         s = generateStateSpace(grid, entities)
-        state = (0,500)
-        q_table = sarsa_trial(s, actions, perform, is_terminal, state, q_table)
-        performAction(agent_host, getAction(q_table, s))
+        # itteration = [0,500]
+        # q_table = sarsa_trial(s, actions, perform, is_terminal, itteration, q_table)
+        q_table = sarsa_trial(s, actions, perform, q_table)
+        action = getAction(q_table, s)
+        print "action=", action
+        performAction(agent_host, action)
 
         # for ent in entities:
             # check entities
@@ -313,8 +322,8 @@ while world_state.is_mission_running:
         difference = lookAtNearestEntity(entities)
         agent_host.sendCommand("turn " + str(difference))
 
-	time.sleep(0.02) #end of while loop
-
+	# time.sleep(0.02)  # end of while loop
+    time.sleep(0.5)  # end of while loop
 
 # mission has ended.
 for error in world_state.errors:
