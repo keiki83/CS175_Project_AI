@@ -5,16 +5,17 @@ import time
 import random
 import json
 import math
-import sarsa
-
-#import Tkinter as tk   #for drawing gamestate on canvas
+from sarsa import *
+# import Tkinter as tk   #for drawing gamestate on canvas
 from collections import namedtuple
-EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, variation, quantity, life')
+
+EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, \
+    variation, quantity, life')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, 0)
 
 actions = ["movenorth 1", "movesouth 1", "movewest 1", "moveeast 1", "nothing"]
 
-#define parameters here
+# define parameters here
 MOB_TYPE = "Zombie"
 AGENT = "Gladiator"
 
@@ -23,7 +24,7 @@ AGENT = "Gladiator"
 # reward is 45 for being at same location as the entity, reward is 1 for
 # maximum agro range of entity Distance reward is less than 1 for distances
 # greater than agro range reward is 0 if no entity detected
-def calculateReward(entities,playerLoc):
+def calculateReward(entities, playerLoc):
     closestMob = Null
     dist = float('inf')
     for ent in entities:
@@ -38,9 +39,9 @@ def calculateReward(entities,playerLoc):
         return reward
 	if(distance(playerLoc,ent) == 0):
 		reward = 45
-	else:
-		reward = 45/distance(playerLoc,ent)
-	return reward
+    else:
+        reward = 45/distance(playerLoc, ent)
+    return reward
 
 
 def perform(a):
@@ -63,10 +64,10 @@ def generateStateSpace(grid, entities):
         if ent.name == AGENT:
             agent = ent
             break
-    grid[playerIndex] = player.name
+    grid[playerIndex] = agent.name
     for ent in entities:
         if ent.name == MOB_TYPE:
-            entIndex = int(playerIndex + dim*(ent.z-player.z) + (ent.x - player.x))
+            entIndex = int(playerIndex + dim*(ent.z-agent.z) + (ent.x - agent.x))
             if(entIndex >= 0 or entIndex < len(grid)):
                 grid[entIndex] = ent.name
     return grid
@@ -91,7 +92,8 @@ def performAction(agent_host, action):
     return
 
 
-#helper functions
+
+# helper functions
 def findUs(entities):
 	for ent in entities:
 		if ent.name == MOB_TYPE:
@@ -120,22 +122,8 @@ def lookAtNearestEntity(entities):
 	difference /= 180.0;
 	return difference
 
-def load_grid(world_state):
-    while world_state.is_mission_running:
-        time.sleep(0.1)
-        world_state = agent_host.getWorldState()
-        if len(world_state.errors) > 0:
-            raise AssertionError('Could not load grid.')
-        if world_state.number_of_observations_since_last_state > 0:
-            msg = world_state.observations[-1].text
-            observations = json.loads(msg)
-            grid = observations.get(u'floorAll', 0)
-            break
-    return grid
 
-
-
-#start of execution
+# start of execution
 
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
 
@@ -152,12 +140,12 @@ if agent_host.receivedArgument("help"):
 	print agent_host.getUsage()
 	exit(0)
 
-#load mission from file
+# load mission from file
 mission_file = './arena1.xml'
 with open(mission_file, 'r') as f:
-	print "Loading mission from %s" % mission_file
-	mission_xml = f.read()
-	my_mission = MalmoPython.MissionSpec(mission_xml, True)
+    print "Loading mission from %s" % mission_file
+    mission_xml = f.read()
+    my_mission = MalmoPython.MissionSpec(mission_xml, True)
 my_mission.forceWorldReset()    # force reset fixes back to back testing
 my_mission_record = MalmoPython.MissionRecordSpec()
 
@@ -196,36 +184,39 @@ current_life = 0
 
 q_table = {}
 
-
 # Loop until mission ends:
 while world_state.is_mission_running:
-	agent_host.sendCommand("attack 1")
-	world_state = agent_host.getWorldState()
+    agent_host.sendCommand("attack 1")
+    world_state = agent_host.getWorldState()
+    if world_state.number_of_observations_since_last_state > 0:
+        # this is where the rewards are counted and the policy is updated
+        current_reward = 0
+        msg = world_state.observations[-1].text
+        ob = json.loads(msg)
+        grid = ob.get(u'floorAll', 0)
 
-	if world_state.number_of_observations_since_last_state > 0:
-		# this is where the rewards are counted and the policy is updated
-		current_reward = 0
-		msg = world_state.observations[-1].text
-		ob = json.loads(msg)
-
-		if "Life" in ob:
-			life = ob[u'Life']
-			if life < current_life:
-				agent_host.sendCommand("chat aaaaaaaaargh!!!")
-				# do something with rewards
-			current_life = life
-		if "entities" in ob:
+        if "Life" in ob:
+            life = ob[u'Life']
+            if life < current_life:
+                agent_host.sendCommand("chat aaaaaaaaargh!!!")
+                # do something with rewards
+            current_life = life
+        if "entities" in ob:
 			entities = [EntityInfo(**k) for k in ob["entities"]]
 
-		# by here we know the game state
-		# sarsa starts here
-        grid = load_grid(world_state)
+        # by here we know the game state
+		# Sarsa starts here
+
         s = generateStateSpace(grid, entities)
-        state(0,500)
-        q_table = sarsa_trial(s, actions, perform, is_terminal, state,  q_table)
-        performAction(agent_host, getAction(q_table, s))
+        print s
+        state = (0,500)
+        # q_table = sarsa_trial(s, actions, perform, is_terminal, state, q_table)
+        # performAction(agent_host, getAction(q_table, s))
 
+        # for ent in entities:
+            # check entities
 
+        # actions carries out here
         # turn towards the nearest zombie
         difference = lookAtNearestEntity(entities)
         agent_host.sendCommand("turn " + str(difference))
@@ -235,9 +226,9 @@ while world_state.is_mission_running:
 
 # mission has ended.
 for error in world_state.errors:
-	print "Error:",error.text
+    print "Error:", error.text
 
 print
 print "Mission ended"
 # Mission has ended.
-time.sleep(1) #Give mod some time.
+time.sleep(1)  # Give mod some time.
