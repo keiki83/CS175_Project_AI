@@ -17,9 +17,9 @@ def choose_e_greedy(state, actions, q_table, epsilon):
 
 def iteration_continue(iterations, max_iterations):
     return True if max_iterations == 0 else (iterations < max_iterations)
-        
+
 # def sarsa_trial(s, actions, perform, is_terminal, iteration, q_table = {}, alpha=0.5, gamma=0.9, epsilon = 0.2):
-def sarsa_trial(s, actions, perform, is_terminal, q_table = {}, alpha=0.5, gamma=0.9, epsilon = 0.2, max_iterations=0):
+def perform_trial(s, actions, perform, is_terminal, q_table = {}, alpha=0.5, gamma=0.9, epsilon = 0.2, max_iterations=0):
     # s = initial state
     # actions = list of actions valid from s
     # perform = function which takes an action as a parameter and returns:    reward, s_prime, valid actions from s_prime

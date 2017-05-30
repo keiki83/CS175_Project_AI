@@ -42,6 +42,7 @@
 				  <AbsoluteMovementCommands/>
 				  <ContinuousMovementCommands/>
 				  <ChatCommands/>
+                  <MissionQuitCommands/>
 				  <ObservationFromFullStats/>
                   <ObservationFromNearbyEntities>
                     <Range name="entities" xrange="21" yrange="2" zrange="80" />

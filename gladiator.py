@@ -5,7 +5,7 @@ import time
 import random
 import json
 import math
-from sarsa import *
+from sarsa import perform_trial
 # import Tkinter as tk   #for drawing gamestate on canvas
 from collections import namedtuple
 State = namedtuple('State', 'air, health, x, z')
@@ -18,7 +18,20 @@ air_indices = {1:1, 3:2, 5:4, 7:8}
 air_actions = {"movenorth 1":1, "movewest 1":2, "moveeast 1":4, "movesouth 1":8}
 # define parameters here
 MOB_TYPE = "Zombie"
+MOB_START_LOCATION = (5.5,64,-10)
 AGENT = "Gladiator"
+DEFAULT_MISSION = "arena2.xml"
+DEFAULT_NUM_TRIALS = 100
+WALL_MOVE_PENALTY = -10.
+MOVE_PENALTY = -1.
+DAMAGE_PENALTY = -5.
+DEATH_PENALTY = -200.
+MAX_ENEMY_PROXIMITY_REWARD = 45.
+ENEMY_DEATH_REWARD = 200.
+ENABLE_ENEMY_DISTANCE_SATURATION = True
+ENEMY_DISTANCE_SATURATION_LEVEL = 3
+ENABLE_KNOCKBACK_RESISTANCE = True
+KNOCKBACK_RESIST_COMMAND = "/replaceitem entity @p slot.armor.feet leather_boots 1 0 {AttributeModifiers:{AttributeName:generic.knockbackResistance, Amount:1, Operation:0}}"
 
 # Sarsa Related Functions
 
@@ -198,8 +211,7 @@ def findUs(entities):
 		else:
 			return ent
 
-def lookAtNearestEntity(entity_dict):
-    entities = [EntityInfo(**k) for k in entity_dict]
+def lookAtNearestEntity(entities):
     us = findUs(entities)
     current_yaw = us.yaw
     closestEntity = 0
@@ -220,69 +232,6 @@ def lookAtNearestEntity(entity_dict):
     difference /= 180.0;
     return difference
 
-
-# start of execution
-
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
-
-# Create default Malmo objects:
-
-agent_host = MalmoPython.AgentHost()
-try:
-	agent_host.parse( sys.argv )
-except RuntimeError as e:
-	print 'ERROR:',e
-	print agent_host.getUsage()
-	exit(1)
-if agent_host.receivedArgument("help"):
-	print agent_host.getUsage()
-	exit(0)
-
-# load mission from file
-#mission_file = './tutorial_6.xml'
-mission_file = './arena2.xml'
-with open(mission_file, 'r') as f:
-    print "Loading mission from %s" % mission_file
-    mission_xml = f.read()
-    my_mission = MalmoPython.MissionSpec(mission_xml, True)
-my_mission.forceWorldReset()    # force reset fixes back to back testing
-my_mission_record = MalmoPython.MissionRecordSpec()
-
-# Attempt to start a mission:
-max_retries = 3
-for retry in range(max_retries):
-	try:
-		agent_host.startMission( my_mission, my_mission_record )
-		break
-	except RuntimeError as e:
-		if retry == max_retries - 1:
-			print "Error starting mission:",e
-			exit(1)
-		else:
-			time.sleep(2)
-
-# Loop until mission starts:
-print "Waiting for the mission to start ",
-world_state = agent_host.getWorldState()
-while not world_state.has_mission_begun:
-	sys.stdout.write(".")
-	time.sleep(0.1)
-	world_state = agent_host.getWorldState()
-	for error in world_state.errors:
-		print "Error:",error.text
-
-print
-print "Mission running ",
-
-# Main loop:
-total_reward = 0
-total_commands = 0
-current_yaw = 0
-best_yaw = 0
-current_life = -1
-current_air = 0
-q_table = {}
-
 def extractAirState(grid):
     s = 0
     for k,v in air_indices.items():
@@ -291,7 +240,6 @@ def extractAirState(grid):
     return s
 
 def extractMobState(entities):
-    #TODO: find zombie x,z coords from entities observation
     for entity in [EntityInfo(**k) for k in entities]:
         if entity.name == AGENT:
             m_x = a_x = math.floor(entity.x)
@@ -299,17 +247,18 @@ def extractMobState(entities):
         elif entity.name == MOB_TYPE:
             m_x = math.floor(entity.x)
             m_z = math.floor(entity.z)
-    x = abs(m_x-a_x)
-    #if x > 3:
-    #    x = 3.
-    z = abs(m_z - a_z)
-    #if z > 3:
-    #    z = 3.
+    x = m_x - a_x
+    z = m_z - a_z
+    if ENABLE_ENEMY_DISTANCE_SATURATION:
+        if abs(x) > ENEMY_DISTANCE_SATURATION_LEVEL:
+            x = math.copysign(ENEMY_DISTANCE_SATURATION_LEVEL, x)
+        if abs(z) > ENEMY_DISTANCE_SATURATION_LEVEL:
+            z = math.copysign(ENEMY_DISTANCE_SATURATION_LEVEL, z)
     return x,z
-    
-def extractHealthState(life):  
+
+def extractHealthState(life):
     return life
-    
+
 # this is where the rewards are counted and the state is determined
 def getState():
     world_state = agent_host.getWorldState()
@@ -327,82 +276,144 @@ def getState():
         s = None
         ob = None
     return s, ob
-    
+
 def isTerminal(state):
     return (state is None) or (state.health == 0.) or (not world_state.is_mission_running) or (state.x == 0. and state.z == 0.)
 
 def calculate_reward(state, s_prime, action):
     reward = 0
-    
-    #health reward
+
+    #health related rewards
     if s_prime.health == 0.:
-        #died
-        reward = reward -100
+        reward = reward - DEATH_PENALTY
     elif s_prime.health < state.health:
-        #lost health
-        reward = reward - 1
-    
-    #distance reward
+        reward = reward - DAMAGE_PENALTY
+
+    #distance related rewards
     if state.x == 0. and state.z == 0:
         #mob dead
-        reward = reward + 100
+        reward = reward + ENEMY_DEATH_REWARD
     else:
         #reward closeness to mob
-        reward = reward + 25 / math.sqrt(state.x**2 + state.z**2)
-        
-    
-    #movement penalty
+        reward = reward + (MAX_ENEMY_PROXIMITY_REWARD / math.sqrt(state.x**2 + state.z**2))
+
+
+    #movement related penalties
     if action != "nothing":
-        reward = reward - 1
-        #wall penalty
-        print 'action', action
+        reward = reward - MOVE_PENALTY
         if (state.air & air_actions[action]) == 0:
-            reward = reward - 1
-    
+            reward = reward - WALL_MOVE_PENALTY
+
     return reward
 
 def do_action(state, action):
+    sys.stderr.write(action + "\n")
     if action != "nothing":
         agent_host.sendCommand(action)
     s_prime, ob = getState()
     if not state is None:
         reward = calculate_reward(state, s_prime, action)
-        
-        # automatic actions carries out here
+
+        # automatic actions carried out here
+
         # turn towards the nearest zombie
-        difference = lookAtNearestEntity(ob[u'entities'])
+        difference = lookAtNearestEntity([EntityInfo(**k) for k in ob[u'entities']])
         agent_host.sendCommand("turn " + str(difference))
+
         #swing weapon
         agent_host.sendCommand("attack 1")
-        # time.sleep(0.02)  # end of while loop
         time.sleep(0.5)
+
     else:
         reward = -100
     valid_actions = availableActions(state)
     return reward, s_prime, valid_actions
 
-    
-    
-# Loop until mission ends:
-while world_state.is_mission_running:
-    n = 1
-    #perform n trials
-    for i in range(0,n):
-        #RESET TRIAL HERE
-        
-        agent_host.sendCommand("chat /summon Zombie 5.5 64 -10")    
+def load_mission(fileName):
+    # load mission from file
+    #mission_file = './tutorial_6.xml'
+    my_mission = None
+    my_mission_record = None
+    with open(fileName, 'r') as f:
+        print "Loading mission from %s" % fileName
+        mission_xml = f.read()
+        my_mission = MalmoPython.MissionSpec(mission_xml, True)
+    #my_mission.forceWorldReset()    # force reset fixes back to back testing
+        my_mission_record = MalmoPython.MissionRecordSpec()
+    return my_mission, my_mission_record
+
+def start_mission(agent_host, mission, mission_record):
+# Attempt to start a mission:
+    max_retries = 3
+    for retry in range(max_retries):
+    	try:
+    		agent_host.startMission( mission, mission_record )
+    		break
+    	except RuntimeError as e:
+    		if retry == max_retries - 1:
+    			print "Error starting mission:",e
+    			exit(1)
+    		else:
+    			time.sleep(2)
+    # Loop until mission starts:
+    print "Waiting for the mission to start ",
+    world_state = agent_host.getWorldState()
+    while not world_state.has_mission_begun:
+    	sys.stdout.write(".")
+    	time.sleep(0.1)
+    	world_state = agent_host.getWorldState()
+    	for error in world_state.errors:
+    		print "Error:",error.text
+
+    print
+    print "Mission running ",
+
+
+
+if __name__ == "__main__":
+    # start of execution
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
+    # Create default Malmo objects:
+    agent_host = MalmoPython.AgentHost()
+    try:
+    	agent_host.parse( sys.argv )
+    except RuntimeError as e:
+    	print 'ERROR:',e
+    	print agent_host.getUsage()
+    	exit(1)
+    if agent_host.receivedArgument("help"):
+    	print agent_host.getUsage()
+    	exit(0)
+    my_mission, my_mission_record = load_mission(DEFAULT_MISSION)
+
+    # Main loop:
+    #total_reward = 0
+    #total_commands = 0
+    #current_yaw = 0
+    #best_yaw = 0
+    q_table = {} # TODO: Load from previous trials
+    # Loop until mission ends:
+    for i in range(DEFAULT_NUM_TRIALS):
+        start_mission(agent_host, my_mission, my_mission_record)
+        world_state = agent_host.getWorldState()
+        agent_host.sendCommand("chat /summon {0} {1} {2} {3}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2]))
+        if ENABLE_KNOCKBACK_RESISTANCE:
+            agent_host.sendCommand("chat " + KNOCKBACK_RESIST_COMMAND) #knockback protection
         s,_ = getState()
-        
-        q_table = sarsa_trial(s, actions, do_action, isTerminal, q_table)
-        #POTENTIALLY SAVE Q_TABLE FOR LATER USE
-        
-        
+        q_table = perform_trial(s, actions, do_action, isTerminal, q_table)
+        print "Trial {} finished.".format(i+1)
+        world_state = agent_host.getWorldState()
+        if world_state.is_mission_running:
+            agent_host.sendCommand("quit")
 
-# mission has ended.
-for error in world_state.errors:
-    print "Error:", error.text
 
-print
-print "Mission ended"
-# Mission has ended.
-time.sleep(1)  # Give mod some time.
+    #TODO: Save q_table for further use
+
+    # mission has ended.
+    for error in world_state.errors:
+        print "Error:", error.text
+
+    print
+    print "Mission ended"
+    # Mission has ended.
+    time.sleep(1)  # Give mod some time.
