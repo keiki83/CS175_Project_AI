@@ -8,13 +8,14 @@ import math
 from sarsa import *
 # import Tkinter as tk   #for drawing gamestate on canvas
 from collections import namedtuple
-
+State = namedtuple('State', 'air, health, x, z')
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, \
     variation, quantity, life')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, 0)
 
 actions = ["movenorth 1", "movesouth 1", "moveeast 1", "movewest 1", "nothing"]
-
+air_indices = {1:1, 3:2, 5:4, 7:8}
+air_actions = {"movenorth 1":1, "movewest 1":2, "moveeast 1":4, "movesouth 1":8}
 # define parameters here
 MOB_TYPE = "Zombie"
 AGENT = "Gladiator"
@@ -22,170 +23,170 @@ AGENT = "Gladiator"
 # Sarsa Related Functions
 
 # calculateReward helper function
-def distance(playerLoc, ent):
+#def distance(playerLoc, ent):
     # helper function for reward()
-    return math.sqrt((ent.x - playerLoc[0])**2 + (ent.z - playerLoc[1])**2)
+    #return math.sqrt((ent.x - playerLoc[0])**2 + (ent.z - playerLoc[1])**2)
 
 # reward is 45 for being at same location as the entity, reward is 1 for
 # maximum agro range of entity Distance reward is less than 1 for distances
 # greater than agro range reward is 0 if no entity detected
-def calculateReward(entities, playerLoc):
-    closestMob = Null
-    dist = float('inf')
-    for ent in entities:
-        if(closestMob == Null and ent.name != AGENT):
-            closetMob == ent
-            continue
-        if(distance(playerLoc, ent) < dist and ent.name == MOB_TYPE):
-            closestMob = ent
-            dist = distance(playerLoc, ent)
-    reward = 0
-    if(closestMob == Null):
-        return reward
-	if(distance(playerLoc, ent) == 0):
-		reward = 45
-    else:
-        reward = 45/distance(playerLoc, ent)
-    return reward
+#def calculateReward(entities, playerLoc):
+#    closestMob = Null
+#    dist = float('inf')
+#    for ent in entities:
+#        if(closestMob == Null and ent.name != AGENT):
+#            closetMob == ent
+#            continue
+#        if(distance(playerLoc, ent) < dist and ent.name == MOB_TYPE):
+#            closestMob = ent
+#            dist = distance(playerLoc, ent)
+#    reward = 0
+#    if(closestMob == Null):
+#        return reward
+#    if(distance(playerLoc, ent) == 0):
+#        reward = 45
+#    else:
+#        reward = 45/distance(playerLoc, ent)
+#    return reward
 
 
 # helper function
-def isAir(s, actionIndex):
-    if(actionIndex >= 0 and actionIndex < len(s) and
-            s[actionIndex] == "air"):
-        return True
-    else:
-        return False
+#def isAir(s, actionIndex):
+#    if(actionIndex >= 0 and actionIndex < len(s) and
+#            s[actionIndex] == "air"):
+#        return True
+#    else:
+#        return False
 
 
-def swapIndex(s, fromIndex, toIndex):
-    temp = s[toIndex]
-    s[toIndex] = s[fromIndex]
-    s[fromIndex] = s[toIndex]
-    return s
+#def swapIndex(s, fromIndex, toIndex):
+#    temp = s[toIndex]
+#    s[toIndex] = s[fromIndex]
+#    s[fromIndex] = s[toIndex]
+#    return s
 
 
 def availableActions(s_prime):
-    actions_prime = []
-    dim = int(math.sqrt(len(s_prime)))
-
+    actions_prime = actions
+    #actions_prime = []
+    #dim = int(math.sqrt(len(s_prime)))
+    #
     # locate agent
-    agentIndex = -1
-    for i in range(0,len(s_prime)):
-        if(s_prime[i] == AGENT):
-            agentIndex = i
-            break
-    offset = [-dim, dim, 1, -1]  # north, south, east, west
-    for i in range(0, len(actions)-1):
-        if(isAir(s_prime, agentIndex + offset[i])):
-            actions_prime.append(actions[i])
-    actions_prime.append(actions[len(actions) - 1])
+    #agentIndex = -1
+    #for i in range(0,len(s_prime)):
+    #    if(s_prime[i] == AGENT):
+    #        agentIndex = i
+    #        break
+    #offset = [-dim, dim, 1, -1]  # north, south, east, west
+    #for i in range(0, len(actions)-1):
+    #    if(isAir(s_prime, agentIndex + offset[i])):
+    #        actions_prime.append(actions[i])
+    #actions_prime.append(actions[len(actions) - 1])
 
     return actions_prime
 
 
-def perform(s,action):
+#def perform(s,action):
     # perform = function which takes an action as a parameter and returns:
     #    reward, s_prime, valid actions from s_prime
     # NOTES: modify s_prime array by action
     #        do not allow a move into a non air block, penalize
     #        north = -z, south = +z inc/dec by dim
     #        east = +x, west = -x inc/dec by 1
-    reward = 0
-    s_prime = list(s)
-    actions_prime = actions
-    dim = int(math.sqrt(len(s_prime)))
+#    reward = 0
+#    s_prime = list(s)
+#    actions_prime = actions
+#    dim = int(math.sqrt(len(s_prime)))
 
     # locate agent
-    agentIndex = -1
-    for i in range(0,len(s_prime)):
-        if(s_prime[i] == AGENT):
-            agentIndex = i
-            break
+#    agentIndex = -1
+#    for i in range(0,len(s_prime)):
+#        if(s_prime[i] == AGENT):
+#            agentIndex = i
+#            break
 
     # carry out action
-    if(action != "nothing"):
-        if(action == "movenorth 1"):  # -z axis (-dim)
-            actionIndex = agentIndex - dim
-            if(isAir(s_prime, actionIndex)):
-                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
+#    if(action != "nothing"):
+#        if(action == "movenorth 1"):  # -z axis (-dim)
+#            actionIndex = agentIndex - dim
+#            if(isAir(s_prime, actionIndex)):
+#                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
                 # calculate reward
-                reward = 1  # place holder
-            else:
+#                reward = 1  # place holder
+#            else:
                 # penalize e.g. move into zombie / move into wall
-                reward = -1  # place holder
-        if(action == "movesouth 1"):  # +z axis (+dim)
-            actionIndex = agentIndex + dim
-            if(isAir(s_prime, actionIndex)):
-                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
+#                reward = -1  # place holder
+#        if(action == "movesouth 1"):  # +z axis (+dim)
+#            actionIndex = agentIndex + dim
+#            if(isAir(s_prime, actionIndex)):
+#                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
                 # calculate reward
-                reward = 1  # place holder
-            else:
+#                reward = 1  # place holder
+#            else:
                 # penalize e.g. move into zombie / move into wall
-                reward = -1  # place holder
-        if(action == "moveeast 1"):  # +x axis (+1)
-            actionIndex = agentIndex + 1
-            if(isAir(s_prime, actionIndex)):
-                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
+#                reward = -1  # place holder
+#        if(action == "moveeast 1"):  # +x axis (+1)
+#            actionIndex = agentIndex + 1
+#            if(isAir(s_prime, actionIndex)):
+#                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
                 # calculate reward
-                reward = 1  # place holder
-            else:
+#                reward = 1  # place holder
+#            else:
                 # penalize e.g. move into zombie / move into wall
-                reward = -1  # place holder
-        if(action == "movewest 1"):  # -x axis (-1)
-            actionIndex = agentIndex - 1
-            if(isAir(s_prime, actionIndex)):
-                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
+#                reward = -1  # place holder
+#        if(action == "movewest 1"):  # -x axis (-1)
+#            actionIndex = agentIndex - 1
+#            if(isAir(s_prime, actionIndex)):
+#                s_prime = swapIndex(s_prime, agentIndex, actionIndex)
                 # calculate reward
-                reward = 1  # place holder
-            else:
+#                reward = 1  # place holder
+#            else:
                 # penalize e.g. move into zombie / move into wall
-                reward = -1  # place holder
+#                reward = -1  # place holder
 
     # determine available movements
-    actions_prime = availableActions(s_prime)
-
-    return reward, s_prime, actions_prime
+#    actions_prime = availableActions(s_prime)
+#    return reward, s_prime, actions_prime
 
 # # controls maximum itterations of sarsa_trial
 # def is_terminal(state):
 #     return (state[0] >= state[1])
 
 # generate the statespace for sarsa
-def generateStateSpace(grid, entities):
-    dim = math.sqrt(len(grid))
-    playerIndex = int(dim*(dim//2) + dim//2)
-    agent  = 0
-    for ent in entities:
-        if ent.name == AGENT:
-            agent = ent
-            break
-    grid[playerIndex] = agent.name
-    for ent in entities:
-        if ent.name == MOB_TYPE:
-            entIndex = int(playerIndex + dim*(ent.z-agent.z) + (ent.x - agent.x))
-            if(entIndex >= 0 or entIndex < len(grid)):
-                grid[entIndex] = ent.name
-    return grid
+#def generateStateSpace(grid, entities):
+#    dim = math.sqrt(len(grid))
+#    playerIndex = int(dim*(dim//2) + dim//2)
+#    agent  = 0
+#    for ent in entities:
+#        if ent.name == AGENT:
+#            agent = ent
+#            break
+#    grid[playerIndex] = agent.name
+#    for ent in entities:
+#        if ent.name == MOB_TYPE:
+#            entIndex = int(playerIndex + dim*(ent.z-agent.z) + (ent.x - agent.x))
+#            if(entIndex >= 0 or entIndex < len(grid)):
+#                grid[entIndex] = ent.name
+#    return grid
 
 # get best action to take
-def getAction(q_table, state):
-    action = 0
-    value = float('-inf')
-    for key in q_table:
-        if(key[0] == repr(state) and q_table[key] > value):
-            action = key[1]
-            value = q_table[key]
-    return action
+#def getAction(q_table, state):
+#    action = 0
+#    value = float('-inf')
+#    for key in q_table:
+#        if(key[0] == repr(state) and q_table[key] > value):
+#            action = key[1]
+#            value = q_table[key]
+#    return action
 
 
 # perform action in game for agent
-def performAction(agent_host, action):
-    if (action == "nothing"):
-        return
-    else:
-        agent_host.sendCommand(action)
-    return
+#def performAction(agent_host, action):
+#    if (action == "nothing"):
+#        return
+#    else:
+#        agent_host.sendCommand(action)
+#    return
 
 
 
@@ -197,26 +198,27 @@ def findUs(entities):
 		else:
 			return ent
 
-def lookAtNearestEntity(entities):
-	us = findUs(entities)
-	current_yaw = us.yaw
-	closestEntity = 0
-	entityDistance = sys.float_info.max
-	for i,ent in enumerate(entities):
-		if ent.name == MOB_TYPE:
-			#check distance from us and get the lowest
-			dist = (ent.x - us.x)*(ent.x - us.x) + (ent.z - us.z)*(ent.z - us.z)
-			if(dist < entityDistance):
-				closestEntity = i
-				entityDistance = dist
-	best_yaw = math.degrees(math.atan2(entities[closestEntity].z - us.z, entities[closestEntity].x - us.x)) - 90
-	difference = best_yaw - current_yaw;
-	while difference < -180:
-		difference += 360;
-	while difference > 180:
-		difference -= 360;
-	difference /= 180.0;
-	return difference
+def lookAtNearestEntity(entity_dict):
+    entities = [EntityInfo(**k) for k in entity_dict]
+    us = findUs(entities)
+    current_yaw = us.yaw
+    closestEntity = 0
+    entityDistance = sys.float_info.max
+    for i,ent in enumerate(entities):
+        if ent.name == MOB_TYPE:
+            #check distance from us and get the lowest
+            dist = (ent.x - us.x)*(ent.x - us.x) + (ent.z - us.z)*(ent.z - us.z)
+            if(dist < entityDistance):
+                closestEntity = i
+                entityDistance = dist
+    best_yaw = math.degrees(math.atan2(entities[closestEntity].z - us.z, entities[closestEntity].x - us.x)) - 90
+    difference = best_yaw - current_yaw;
+    while difference < -180:
+        difference += 360;
+    while difference > 180:
+        difference -= 360;
+    difference /= 180.0;
+    return difference
 
 
 # start of execution
@@ -237,6 +239,7 @@ if agent_host.receivedArgument("help"):
 	exit(0)
 
 # load mission from file
+#mission_file = './tutorial_6.xml'
 mission_file = './arena2.xml'
 with open(mission_file, 'r') as f:
     print "Loading mission from %s" % mission_file
@@ -276,54 +279,124 @@ total_reward = 0
 total_commands = 0
 current_yaw = 0
 best_yaw = 0
-current_life = 0
-
+current_life = -1
+current_air = 0
 q_table = {}
-while(True):
-    agent_host.sendCommand('movenorth 1')
-    time.sleep(1)
 
-# Loop until mission ends:
-while world_state.is_mission_running:
-    #agent_host.sendCommand("attack 1")
+def extractAirState(grid):
+    s = 0
+    for k,v in air_indices.items():
+        if grid[k] == u'air':
+            s = s + v
+    return s
+
+def extractMobState(entities):
+    #TODO: find zombie x,z coords from entities observation
+    for entity in [EntityInfo(**k) for k in entities]:
+        if entity.name == AGENT:
+            m_x = a_x = math.floor(entity.x)
+            m_z = a_z = math.floor(entity.z)
+        elif entity.name == MOB_TYPE:
+            m_x = math.floor(entity.x)
+            m_z = math.floor(entity.z)
+    x = abs(m_x-a_x)
+    #if x > 3:
+    #    x = 3.
+    z = abs(m_z - a_z)
+    #if z > 3:
+    #    z = 3.
+    return x,z
+    
+def extractHealthState(life):  
+    return life
+    
+# this is where the rewards are counted and the state is determined
+def getState():
     world_state = agent_host.getWorldState()
-    if world_state.number_of_observations_since_last_state > 0:
-        # this is where the rewards are counted and the policy is updated
-        current_reward = 0
+    while world_state.is_mission_running and len(world_state.observations) == 0:
+        time.sleep(0.1)
+        world_state = agent_host.getWorldState()
+    if world_state.is_mission_running:
         msg = world_state.observations[-1].text
         ob = json.loads(msg)
-        grid = ob.get(u'floorAll', 0)
+        airState = extractAirState(ob.get(u'floorAll',0))
+        healthState = extractHealthState(ob[u'Life'])
+        mob_x, mob_z = extractMobState(ob[u'entities'])
+        s = State(airState, healthState, mob_x, mob_z)
+    else:
+        s = None
+        ob = None
+    return s, ob
+    
+def isTerminal(state):
+    return (state is None) or (state.health == 0.) or (not world_state.is_mission_running) or (state.x == 0. and state.z == 0.)
 
-        if "Life" in ob:
-            life = ob[u'Life']
-            if life < current_life:
-                agent_host.sendCommand("chat aaaaaaaaargh!!!")
-                # do something with rewards
-            current_life = life
-        if "entities" in ob:
-			entities = [EntityInfo(**k) for k in ob["entities"]]
+def calculate_reward(state, s_prime, action):
+    reward = 0
+    
+    #health reward
+    if s_prime.health == 0.:
+        #died
+        reward = reward -100
+    elif s_prime.health < state.health:
+        #lost health
+        reward = reward - 1
+    
+    #distance reward
+    if state.x == 0. and state.z == 0:
+        #mob dead
+        reward = reward + 100
+    else:
+        #reward closeness to mob
+        reward = reward + 25 / math.sqrt(state.x**2 + state.z**2)
+        
+    
+    #movement penalty
+    if action != "nothing":
+        reward = reward - 1
+        #wall penalty
+        print 'action', action
+        if (state.air & air_actions[action]) == 0:
+            reward = reward - 1
+    
+    return reward
 
-        # by here we know the game state
-		# Sarsa starts here
-
-        s = generateStateSpace(grid, entities)
-        # itteration = [0,500]
-        # q_table = sarsa_trial(s, actions, perform, is_terminal, itteration, q_table)
-        q_table = sarsa_trial(s, actions, perform, q_table)
-        action = getAction(q_table, s)
-        print "action=", action
-        performAction(agent_host, action)
-
-        # for ent in entities:
-            # check entities
-
-        # actions carries out here
+def do_action(state, action):
+    if action != "nothing":
+        agent_host.sendCommand(action)
+    s_prime, ob = getState()
+    if not state is None:
+        reward = calculate_reward(state, s_prime, action)
+        
+        # automatic actions carries out here
         # turn towards the nearest zombie
-        difference = lookAtNearestEntity(entities)
+        difference = lookAtNearestEntity(ob[u'entities'])
         agent_host.sendCommand("turn " + str(difference))
+        #swing weapon
+        agent_host.sendCommand("attack 1")
+        # time.sleep(0.02)  # end of while loop
+        time.sleep(0.5)
+    else:
+        reward = -100
+    valid_actions = availableActions(state)
+    return reward, s_prime, valid_actions
 
-	# time.sleep(0.02)  # end of while loop
-    time.sleep(0.5)  # end of while loop
+    
+    
+# Loop until mission ends:
+while world_state.is_mission_running:
+    n = 1
+    #perform n trials
+    for i in range(0,n):
+        #RESET TRIAL HERE
+        
+        agent_host.sendCommand("chat /summon Zombie 5.5 64 -10")    
+        s,_ = getState()
+        
+        q_table = sarsa_trial(s, actions, do_action, isTerminal, q_table)
+        #POTENTIALLY SAVE Q_TABLE FOR LATER USE
+        
+        
 
 # mission has ended.
 for error in world_state.errors:
