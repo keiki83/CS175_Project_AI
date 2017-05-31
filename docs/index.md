@@ -12,4 +12,6 @@ title:  Home
 * [Incomplete] Vary the size of the environment
 
 # Useful Links
+[Gladiator GitHub Homepage](https://github.com/keiki83/Gladiator)
+
 [Fighting Zombies in Minecraft With Deep Reinforcement Learning by Udagawa et al](http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf)
