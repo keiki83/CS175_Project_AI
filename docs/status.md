@@ -3,6 +3,8 @@ layout: default
 title: Status
 ---
 
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=XQKkRI_ZEMI" target="_blank"><img src="http://img.youtube.com/vi/XQKkRI_ZEMI/0.jpg" alt="Project Gladiator" width="480" height="360" border="10" /></a>
+
 ## Project Summary
 <!--- things may have changed since proposal (even if they haven’t), write a short
 paragraph summarizing the goals of the project (updated/improved version from the proposal). --->
