@@ -3,7 +3,10 @@ layout: default
 title:  Home
 ---
 
-<img src="https://i.ytimg.com/vi/oc4bXoDOBYs/maxresdefault.jpg" alt="Placeholder for video" width="813" height="457">
+![spartaZombie](frontpage.jpg)
+
+This Gladiator AI uses the Sarsa Model-Free Reinforcement algorithm to defeat Zombies!
+Given enough time, love, and information, this AI will grow to be a fierce gladiator able to take on a variety of foes in life or death combat!
 
 # Road Map
 * [Complete] Create the arena and environment
