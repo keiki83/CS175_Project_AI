@@ -38,7 +38,8 @@ For our base case, we measured the time it took to seek out and kill a single zo
 At the begininning of training, the time to kill a zombie remains fairly constant with it being the time the zombie takes to walk towards the agent and the agent tends to sustain a few hits. However after 10 or more runs, there are two interesting observation.
 First, there are runs where the agent moves quickly towards the zombie killing it in as little as 8 seconds with some hits. Second, there are runs where the agent takes longer to kill the zombie but actually makes moves in the middle of the fight to come out with full health.
 
-![Fig 1](fig1.png) ![Fig 2](fig2.png)
+| ![Fig 1](fig1.png) | ![Fig 2](fig2.png) |
+|-------|------|
 
 
 ## Remaining Goals and Challenges
