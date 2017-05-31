@@ -5,6 +5,7 @@ import time
 import random
 import json
 import math
+import cPickle as pickle
 from sarsa import perform_trial
 # import Tkinter as tk   #for drawing gamestate on canvas
 from collections import namedtuple
@@ -21,18 +22,21 @@ MOB_TYPE = "Zombie"
 MOB_START_LOCATION = (5.5,64,-10)
 AGENT = "Gladiator"
 DEFAULT_MISSION = "arena2.xml"
-DEFAULT_NUM_TRIALS = 100
+DEFAULT_NUM_TRIALS = 500
 WALL_MOVE_PENALTY = -10.
 MOVE_PENALTY = -1.
 DAMAGE_PENALTY = -5.
 DEATH_PENALTY = -200.
-MAX_ENEMY_PROXIMITY_REWARD = 45.
+MAX_ENEMY_PROXIMITY_REWARD = 5
 ENEMY_DEATH_REWARD = 200.
 ENABLE_ENEMY_DISTANCE_SATURATION = True
 ENEMY_DISTANCE_SATURATION_LEVEL = 3
-ENABLE_KNOCKBACK_RESISTANCE = True
+ENABLE_KNOCKBACK_RESISTANCE = False
 KNOCKBACK_RESIST_COMMAND = "/replaceitem entity @p slot.armor.feet leather_boots 1 0 {AttributeModifiers:{AttributeName:generic.knockbackResistance, Amount:1, Operation:0}}"
-
+REWARD_OUTPUT_FILE = "rewards.txt"
+QTABLE_FILENAME = "q_table.p"
+ACTION_DELAY = 0.3
+cumulative_reward = 0.
 # Sarsa Related Functions
 
 # calculateReward helper function
@@ -303,7 +307,8 @@ def calculate_reward(state, s_prime, action):
         reward = reward - MOVE_PENALTY
         if (state.air & air_actions[action]) == 0:
             reward = reward - WALL_MOVE_PENALTY
-
+    global cumulative_reward
+    cumulative_reward = cumulative_reward + reward
     return reward
 
 def do_action(state, action):
@@ -322,7 +327,7 @@ def do_action(state, action):
 
         #swing weapon
         agent_host.sendCommand("attack 1")
-        time.sleep(0.5)
+        time.sleep(ACTION_DELAY)
 
     else:
         reward = -100
@@ -393,6 +398,7 @@ if __name__ == "__main__":
     #best_yaw = 0
     q_table = {} # TODO: Load from previous trials
     # Loop until mission ends:
+    rewards = []
     for i in range(DEFAULT_NUM_TRIALS):
         start_mission(agent_host, my_mission, my_mission_record)
         world_state = agent_host.getWorldState()
@@ -405,8 +411,12 @@ if __name__ == "__main__":
         world_state = agent_host.getWorldState()
         if world_state.is_mission_running:
             agent_host.sendCommand("quit")
+        rewards.append(cumulative_reward)
+        cumulative_reward = 0.
 
-
+    with open(REWARD_OUTPUT_FILE, 'w') as f:
+        for r in rewards:
+            f.write("{}\n".format(r))
     #TODO: Save q_table for further use
 
     # mission has ended.
