@@ -9,28 +9,31 @@ import cPickle as pickle
 from sarsa import perform_trial
 # import Tkinter as tk   #for drawing gamestate on canvas
 from collections import namedtuple
-State = namedtuple('State', 'air, health, x, z')
+#State = namedtuple('State', 'air, health, x, z')
+State = namedtuple('State', 'health, x, z')
+
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, \
     variation, quantity, life')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, 0)
 
-actions = ["movenorth 1", "movesouth 1", "moveeast 1", "movewest 1", "nothing"]
+#actions = ["movenorth 1", "movesouth 1", "moveeast 1", "movewest 1", "nothing"]
+actions = ["move 0.333", "move -0.333", "strafe 0.333", "strafe -0.333", "nothing"]
 air_indices = {1:1, 3:2, 5:4, 7:8}
 air_actions = {"movenorth 1":1, "movewest 1":2, "moveeast 1":4, "movesouth 1":8}
 # define parameters here
 MOB_TYPE = "Zombie"
-MOB_START_LOCATION = (5.5,64,-10)
+MOB_START_LOCATION = (5.5,64,-20)
 AGENT = "Gladiator"
 DEFAULT_MISSION = "arena2.xml"
 DEFAULT_NUM_TRIALS = 500
 WALL_MOVE_PENALTY = -10.
 MOVE_PENALTY = -1.
-DAMAGE_PENALTY = -5.
+DAMAGE_PENALTY = -15.
 DEATH_PENALTY = -200.
-MAX_ENEMY_PROXIMITY_REWARD = 5
+MAX_ENEMY_PROXIMITY_REWARD = 3
 ENEMY_DEATH_REWARD = 200.
-ENABLE_ENEMY_DISTANCE_SATURATION = True
-ENEMY_DISTANCE_SATURATION_LEVEL = 3
+ENABLE_ENEMY_DISTANCE_SATURATION = False
+ENEMY_DISTANCE_SATURATION_LEVEL = 2
 ENABLE_KNOCKBACK_RESISTANCE = False
 KNOCKBACK_RESIST_COMMAND = "/replaceitem entity @p slot.armor.feet leather_boots 1 0 {AttributeModifiers:{AttributeName:generic.knockbackResistance, Amount:1, Operation:0}}"
 REWARD_OUTPUT_FILE = "rewards.txt"
@@ -208,6 +211,13 @@ def availableActions(s_prime):
 
 
 # helper functions
+def countMobs(entities):
+	mobCount = 0
+	for ent in entities:
+		if ent.name == MOB_TYPE:
+			mobCount += 1
+	return mobCount
+
 def findUs(entities):
 	for ent in entities:
 		if ent.name == MOB_TYPE:
@@ -227,6 +237,8 @@ def lookAtNearestEntity(entities):
             if(dist < entityDistance):
                 closestEntity = i
                 entityDistance = dist
+    if closestEntity == 0:
+        return 0
     best_yaw = math.degrees(math.atan2(entities[closestEntity].z - us.z, entities[closestEntity].x - us.x)) - 90
     difference = best_yaw - current_yaw;
     while difference < -180:
@@ -272,26 +284,26 @@ def getState():
     if world_state.is_mission_running:
         msg = world_state.observations[-1].text
         ob = json.loads(msg)
-        airState = extractAirState(ob.get(u'floorAll',0))
-        healthState = extractHealthState(ob[u'Life'])
+#        airState = extractAirState(ob.get(u'floorAll',0))
+       	healthState = extractHealthState(ob[u'Life'])
         mob_x, mob_z = extractMobState(ob[u'entities'])
-        s = State(airState, healthState, mob_x, mob_z)
+#		s = State(airState, healthState, mob_x, mob_z)
+        s = State(healthState, mob_x, mob_z)
     else:
         s = None
         ob = None
     return s, ob
 
 def isTerminal(state):
-    return (state is None) or (state.health == 0.) or (not world_state.is_mission_running) or (state.x == 0. and state.z == 0.)
+    return (state is None) or (state.health == 0.) or (not world_state.is_mission_running) #or (state.x == 0. and state.z == 0.)
 
 def calculate_reward(state, s_prime, action):
     reward = 0
-
     #health related rewards
     if s_prime.health == 0.:
-        reward = reward - DEATH_PENALTY
+        reward = reward + DEATH_PENALTY
     elif s_prime.health < state.health:
-        reward = reward - DAMAGE_PENALTY
+        reward = reward + DAMAGE_PENALTY
 
     #distance related rewards
     if state.x == 0. and state.z == 0:
@@ -301,26 +313,30 @@ def calculate_reward(state, s_prime, action):
         #reward closeness to mob
         reward = reward + (MAX_ENEMY_PROXIMITY_REWARD / math.sqrt(state.x**2 + state.z**2))
 
-
     #movement related penalties
     if action != "nothing":
         reward = reward - MOVE_PENALTY
-        if (state.air & air_actions[action]) == 0:
-            reward = reward - WALL_MOVE_PENALTY
+#        if (state.air & air_actions[action]) == 0:
+#            reward = reward - WALL_MOVE_PENALTY'
+
     global cumulative_reward
     cumulative_reward = cumulative_reward + reward
     return reward
 
 def do_action(state, action):
-    sys.stderr.write(action + "\n")
-    if action != "nothing":
+#    sys.stderr.write(action + "\n")
+    if action == "nothing":
+        agent_host.sendCommand("move 0")
+        agent_host.sendCommand("strafe 0")
+    else:
         agent_host.sendCommand(action)
     s_prime, ob = getState()
     if not state is None:
         reward = calculate_reward(state, s_prime, action)
 
         # automatic actions carried out here
-
+        if(countMobs([EntityInfo(**k) for k in ob[u'entities']]) == 0):
+            agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2], "{IsBaby:0}")) #summon mob
         # turn towards the nearest zombie
         difference = lookAtNearestEntity([EntityInfo(**k) for k in ob[u'entities']])
         agent_host.sendCommand("turn " + str(difference))
@@ -392,17 +408,15 @@ if __name__ == "__main__":
     my_mission, my_mission_record = load_mission(DEFAULT_MISSION)
 
     # Main loop:
-    #total_reward = 0
-    #total_commands = 0
-    #current_yaw = 0
-    #best_yaw = 0
     q_table = {} # TODO: Load from previous trials
     # Loop until mission ends:
     rewards = []
-    for i in range(DEFAULT_NUM_TRIALS):
-        start_mission(agent_host, my_mission, my_mission_record)
-        world_state = agent_host.getWorldState()
-        agent_host.sendCommand("chat /summon {0} {1} {2} {3}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2]))
+    start_mission(agent_host, my_mission, my_mission_record) #restart mission
+    world_state = agent_host.getWorldState()
+    i = 0
+    while world_state.is_mission_running:
+        agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2], "{IsBaby:0}")) #summon mob
+#        agent_host.sendCommand("chat /summon {0} {1} {2} {3}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2])) #summon mob
         if ENABLE_KNOCKBACK_RESISTANCE:
             agent_host.sendCommand("chat " + KNOCKBACK_RESIST_COMMAND) #knockback protection
         s,_ = getState()
@@ -412,7 +426,12 @@ if __name__ == "__main__":
         if world_state.is_mission_running:
             agent_host.sendCommand("quit")
         rewards.append(cumulative_reward)
+        print cumulative_reward
         cumulative_reward = 0.
+        time.sleep(1)
+        start_mission(agent_host, my_mission, my_mission_record) #restart mission
+        world_state = agent_host.getWorldState()
+        i += 1
 
     with open(REWARD_OUTPUT_FILE, 'w') as f:
         for r in rewards:
