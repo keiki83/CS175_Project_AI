@@ -34,7 +34,7 @@
                 <AgentStart>
                   <Placement x=".5" y="64" z="5.5" yaw="180"/>
                   <Inventory>
-                    <InventoryItem slot="0" type="wooden_sword"/>
+                    <InventoryItem slot="0" type="iron_sword"/>
                   </Inventory>
                 </AgentStart>
                 <AgentHandlers>
