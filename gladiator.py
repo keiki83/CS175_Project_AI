@@ -16,14 +16,16 @@ EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, \
     variation, quantity, life')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, 0)
 
+MOVESPEED = 0.33
+AGGRO_RANGE = 5
 #actions = ["movenorth 1", "movesouth 1", "moveeast 1", "movewest 1", "nothing"]
-actions = ["move 0.5", "move -0.5", "strafe 0.5", "strafe -0.5", "nothing", "attack 1"]
+actions = ["move " + str(MOVESPEED) , "move " + str(-1*MOVESPEED), "strafe " + str(MOVESPEED), "strafe " + str(-1*MOVESPEED), "attack 1"]
 
 air_indices = {1:1, 3:2, 5:4, 7:8}
 air_actions = {"movenorth 1":1, "movewest 1":2, "moveeast 1":4, "movesouth 1":8}
 # define parameters here
 MOB_TYPE = "Zombie"
-MOB_START_LOCATION = (5.5,64,-20)
+MOB_START_LOCATION = (5.5,64,-28)
 AGENT = "Gladiator"
 DEFAULT_MISSION = "arena2.xml"
 DEFAULT_NUM_TRIALS = 500
@@ -31,12 +33,12 @@ DEFAULT_NUM_TRIALS = 500
 WALL_MOVE_PENALTY = -10.
 MOVE_PENALTY = -1.
 
-DAMAGE_PENALTY = -25.
+DAMAGE_PENALTY = -20.
 DEATH_PENALTY = -100.
 
-MAX_ENEMY_PROXIMITY_REWARD = 10
+MAX_ENEMY_PROXIMITY_REWARD = 3
 ENEMY_HIT_REWARD = 50
-ENEMY_DEATH_REWARD = 100.
+ENEMY_DEATH_REWARD = 200.
 
 ENABLE_ENEMY_DISTANCE_SATURATION = False
 ENEMY_DISTANCE_SATURATION_LEVEL = 3
@@ -44,7 +46,7 @@ ENABLE_KNOCKBACK_RESISTANCE = False
 KNOCKBACK_RESIST_COMMAND = "/replaceitem entity @p slot.armor.feet leather_boots 1 0 {AttributeModifiers:{AttributeName:generic.knockbackResistance, Amount:1, Operation:0}}"
 REWARD_OUTPUT_FILE = "rewards.txt"
 QTABLE_FILENAME = "q_table.p"
-ACTION_DELAY = 0.1
+ACTION_DELAY = 0.0
 cumulative_reward = 0.
 # Sarsa Related Functions
 
@@ -277,7 +279,8 @@ def lookAtNearestEntity(entities):
     	difference = threshhold
     elif difference > -1*threshhold and difference < 0:
     	difference = -1*threshhold
-    return difference
+
+    agent_host.sendCommand("turn " + str(difference))
 
 def extractAirState(grid):
     s = 0
@@ -357,8 +360,12 @@ def calculate_reward(state, s_prime, action, hit, mobHit):
         reward = reward + (MAX_ENEMY_PROXIMITY_REWARD / math.sqrt(state.x**2 + state.z**2))
 
     #movement related penalties
-    if action != "nothing":
-        reward = reward - MOVE_PENALTY
+    if action == "move " + str(MOVESPEED) and not hit:
+    	reward += 1
+    if action != "move " + str(MOVESPEED) and math.sqrt(state.x**2 + state.z**2) > AGGRO_RANGE:
+    	reward += -1
+#    if action != "nothing":
+#        reward = reward + MOVE_PENALTY
 #        if (state.air & air_actions[action]) == 0:
 #            reward = reward - WALL_MOVE_PENALTY'
 
@@ -368,26 +375,22 @@ def calculate_reward(state, s_prime, action, hit, mobHit):
 
 def do_action(state, action):
 #    sys.stderr.write(action + "\n")
-    if action == "nothing":
-        agent_host.sendCommand("move 0")
-        agent_host.sendCommand("strafe 0")
-    else:
-        agent_host.sendCommand("move 0")
-        agent_host.sendCommand("strafe 0")
+    agent_host.sendCommand("move 0")
+    agent_host.sendCommand("strafe 0")
+    if action != "nothing":
         agent_host.sendCommand(action)
+
     s_prime, ob, hit, mobHit = getState()
     if not state is None:
         reward = calculate_reward(state, s_prime, action, hit, mobHit)
 
         # automatic actions carried out here
-        if(countMobs([EntityInfo(**k) for k in ob[u'entities']]) == 0):
-#            agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2], "{IsBaby:0}")) #summon mob
-            agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0]-5, MOB_START_LOCATION[1], MOB_START_LOCATION[2]+10, "{IsBaby:0}")) #summon mob
-            time.sleep(ACTION_DELAY)
+        if(countMobs([EntityInfo(**k) for k in ob[u'entities']]) == 0): #summon mobs if their are no more on the field
+            agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2], "{IsBaby:0}")) #summon mob
+#            agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0]-5, MOB_START_LOCATION[1], MOB_START_LOCATION[2]+10, "{IsBaby:0}")) #summon mob
+        
         # turn towards the nearest zombie
-        difference = lookAtNearestEntity([EntityInfo(**k) for k in ob[u'entities']])
-        agent_host.sendCommand("turn " + str(difference))
-
+        lookAtNearestEntity([EntityInfo(**k) for k in ob[u'entities']])
         #swing weapon
 #        agent_host.sendCommand("attack 1")
         time.sleep(ACTION_DELAY)
@@ -471,11 +474,11 @@ if __name__ == "__main__":
     start_mission(agent_host, my_mission, my_mission_record) #restart mission
     world_state = agent_host.getWorldState()
     i = 0
-    e = 0.5
+    e = 0.1
     while world_state.is_mission_running:
     	print "epsilon: {}".format(e)
-#        agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2], "{IsBaby:0}")) #summon mob
-        agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0]-5, MOB_START_LOCATION[1], MOB_START_LOCATION[2]+10, "{IsBaby:0}")) #summon mob
+        agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2], "{IsBaby:0}")) #summon mob
+#        agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0]-5, MOB_START_LOCATION[1], MOB_START_LOCATION[2]+10, "{IsBaby:0}")) #summon mob
         if ENABLE_KNOCKBACK_RESISTANCE:
             agent_host.sendCommand("chat " + KNOCKBACK_RESIST_COMMAND) #knockback protection
         s,_,_,_ = getState()
