@@ -25,7 +25,7 @@ air_indices = {1:1, 3:2, 5:4, 7:8}
 air_actions = {"movenorth 1":1, "movewest 1":2, "moveeast 1":4, "movesouth 1":8}
 # define parameters here
 MOB_TYPE = "Zombie"
-MOB_START_LOCATION = (5.5,64,-28)
+MOB_START_LOCATION = [(19,64,19),(-19,64,19),(19,64,-19),(-19,64,-19)]
 AGENT = "Gladiator"
 DEFAULT_MISSION = "arena2.xml"
 DEFAULT_NUM_TRIALS = 500
@@ -379,14 +379,17 @@ def do_action(state, action):
     agent_host.sendCommand("strafe 0")
     if action != "nothing":
         agent_host.sendCommand(action)
+#    if "strafe" in action:
+#    	agent_host.sendCommand("attack 1")
 
     s_prime, ob, hit, mobHit = getState()
     if not state is None:
         reward = calculate_reward(state, s_prime, action, hit, mobHit)
-
+        
+        a = ( int(random.random() * 4) % 4)
         # automatic actions carried out here
         if(countMobs([EntityInfo(**k) for k in ob[u'entities']]) == 0): #summon mobs if their are no more on the field
-            agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2], "{IsBaby:0}")) #summon mob
+            agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[a][0], MOB_START_LOCATION[a][1], MOB_START_LOCATION[a][2], "{IsBaby:0}")) #summon mob
 #            agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0]-5, MOB_START_LOCATION[1], MOB_START_LOCATION[2]+10, "{IsBaby:0}")) #summon mob
             time.sleep(0.3)
         
@@ -478,7 +481,8 @@ if __name__ == "__main__":
     e = 0.2
     while world_state.is_mission_running:
     	print "epsilon: {}".format(e)
-        agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2], "{IsBaby:0}")) #summon mob
+    	a = (int(random.random() * 4) % 4)
+        agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[a][0], MOB_START_LOCATION[a][1], MOB_START_LOCATION[a][2], "{IsBaby:0}")) #summon mob
 #        agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0]-5, MOB_START_LOCATION[1], MOB_START_LOCATION[2]+10, "{IsBaby:0}")) #summon mob
         time.sleep(0.3)
         if ENABLE_KNOCKBACK_RESISTANCE:
