@@ -16,8 +16,8 @@ EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, \
     variation, quantity, life')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, 0)
 
-MOVESPEED = 0.33
-AGGRO_RANGE = 5
+MOVESPEED = 0.75
+AGGRO_RANGE = 10
 #actions = ["movenorth 1", "movesouth 1", "moveeast 1", "movewest 1", "nothing"]
 actions = ["move " + str(MOVESPEED) , "move " + str(-1*MOVESPEED), "strafe " + str(MOVESPEED), "strafe " + str(-1*MOVESPEED), "attack 1"]
 
@@ -33,15 +33,15 @@ DEFAULT_NUM_TRIALS = 500
 WALL_MOVE_PENALTY = -10.
 MOVE_PENALTY = -1.
 
-DAMAGE_PENALTY = -20.
+DAMAGE_PENALTY = -25.
 DEATH_PENALTY = -100.
 
 MAX_ENEMY_PROXIMITY_REWARD = 3
 ENEMY_HIT_REWARD = 50
-ENEMY_DEATH_REWARD = 200.
+ENEMY_DEATH_REWARD = 0.
 
-ENABLE_ENEMY_DISTANCE_SATURATION = False
-ENEMY_DISTANCE_SATURATION_LEVEL = 3
+ENABLE_ENEMY_DISTANCE_SATURATION = True
+ENEMY_DISTANCE_SATURATION_LEVEL = 10
 ENABLE_KNOCKBACK_RESISTANCE = False
 KNOCKBACK_RESIST_COMMAND = "/replaceitem entity @p slot.armor.feet leather_boots 1 0 {AttributeModifiers:{AttributeName:generic.knockbackResistance, Amount:1, Operation:0}}"
 REWARD_OUTPUT_FILE = "rewards.txt"
@@ -388,6 +388,7 @@ def do_action(state, action):
         if(countMobs([EntityInfo(**k) for k in ob[u'entities']]) == 0): #summon mobs if their are no more on the field
             agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2], "{IsBaby:0}")) #summon mob
 #            agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0]-5, MOB_START_LOCATION[1], MOB_START_LOCATION[2]+10, "{IsBaby:0}")) #summon mob
+            time.sleep(0.3)
         
         # turn towards the nearest zombie
         lookAtNearestEntity([EntityInfo(**k) for k in ob[u'entities']])
@@ -406,7 +407,7 @@ def do_action(state, action):
         	    agent_host.sendCommand("chat Come at me!!!")
 
     else:
-        reward = -100
+        reward = 0
     valid_actions = availableActions(state)
     return reward, s_prime, valid_actions
 
@@ -474,11 +475,12 @@ if __name__ == "__main__":
     start_mission(agent_host, my_mission, my_mission_record) #restart mission
     world_state = agent_host.getWorldState()
     i = 0
-    e = 0.1
+    e = 0.2
     while world_state.is_mission_running:
     	print "epsilon: {}".format(e)
         agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0], MOB_START_LOCATION[1], MOB_START_LOCATION[2], "{IsBaby:0}")) #summon mob
 #        agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[0]-5, MOB_START_LOCATION[1], MOB_START_LOCATION[2]+10, "{IsBaby:0}")) #summon mob
+        time.sleep(0.3)
         if ENABLE_KNOCKBACK_RESISTANCE:
             agent_host.sendCommand("chat " + KNOCKBACK_RESIST_COMMAND) #knockback protection
         s,_,_,_ = getState()
