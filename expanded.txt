@@ -1,0 +1,23 @@
+Old agent was not displaying learning over time, so I put some removed state variables back into the state and modified others.
+It is important that the agent "understands" situations which affect rewards as much as possible, and we are nowhere near 
+having a state space big enough to cause memory or computation issues during agent actions.
+
+Re-implemented health in the state as 25% bands.
+Re-implemented air blocks in the state and penalty for running into walls.
+Placed agent/mob hits into state.
+Removed ability for zombies to spawn in a corner if agent is within 2 blocks (spawning on top of the agent was always disastrous)
+Changed x/z position to a single distance parameter, because x/z offset are meaningless when using continuous movement commands.
+Changed mob proximity reward to penalize moving away from zombie and reward moving closer.
+Small reward per tick for surviving.
+Agent's penalty for taking damage increases as health decreases.
+Moved mob spawning and normalzing yaw between -180/180 to functions for use elsewhere
+Removed threshhold from lookAtNearestEntity function because it was causing the agent to appear jittery and miss zombie often
+Removed strafe attack which gave the illusion that the agent was smarter than it was (this was revealed by reviewing cumulative rewards and a lack of improvement in ability to live or kill zombies).
+
+
+I am running 1000 trials overnight to train the agent and will upload q_table/statistics afterward.
+My initial testing before resume features were added showed significant improvement of agent performance in
+all 3 categories, with random poor trials mixed in when the zombie manages to create situations the agent
+doesn't seem to be able to model, such as rushing the agent and repeatedly knocking it against the wall. Also,
+even with delay it will occasionally spawn two zombies at once which usually destroy the agent, but it does
+occasionally win.
