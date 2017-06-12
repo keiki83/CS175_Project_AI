@@ -8,36 +8,42 @@ import math
 from sarsa import perform_trial
 from collections import namedtuple
 
-State = namedtuple('State', 'x, z, hit')
 
+State = namedtuple('State', 'x, z, hit, mob_hit, health')
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, variation, quantity, life')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, 0)
 
-# define parameters here
-DEFAULT_NUM_TRIALS = 20
+
+# trial parameters
+DEFAULT_NUM_TRIALS = 500
+EPSILON = 0.1
 AGENT = "Gladiator"
 DEFAULT_MISSION = "arena2.xml"
 SIDE_ATTACK = True
-MOVESPEED = 0.75
-actions = ["move " + str(MOVESPEED) , "move " + str(-1*MOVESPEED), "strafe " + str(MOVESPEED), "strafe " + str(-1*MOVESPEED), "attack 1"]
-
-MOB_TYPE = "Zombie"
-MOB_START_LOCATION = [(19,64,19),(-19,64,19),(19,64,-19),(-19,64,-19)]
-
-# rewards
-DAMAGE_PENALTY = -35.
-DEATH_PENALTY = -100.
-MAX_ENEMY_PROXIMITY_REWARD = 3
-ENEMY_HIT_REWARD = 50
-
+HEALTH_CRITICAL_LEVEL = 10.
 ENABLE_ENEMY_DISTANCE_SATURATION = True
-ENEMY_DISTANCE_SATURATION_LEVEL = 6
-
+ENEMY_DISTANCE_SATURATION_LEVEL = 10
 STATISTICS_OUTPUT_FILE = "statistics.txt"
 QTABLE_FILENAME = "q_table.p"
+MOB_TYPE = "Zombie"
+MOB_START_LOCATION = [(8,64,8),(-8,64,8),(8,64,-8),(-8,64,-8)]
+MOVESPEED = 1.0
+ACTION_DELAY = 0.1
+HEALTH_THRESHOLDS = ((20., 0), (15., 1), (10., 2), (5., 3), (0., 4))
+actions = ["move " + str(MOVESPEED) , "move " + str(-1*MOVESPEED), "strafe " + str(MOVESPEED), "strafe " + str(-1*MOVESPEED), "attack 1"]
+air_actions = {actions[0]:1, actions[1]:2, actions[2]:4, actions[3]:8}
+# rewards
+DEATH_REWARD = -50.
+PROXIMITY_REWARD = 10
+ENEMY_HIT_REWARD = 25
+DAMAGE_REWARD = -ENEMY_HIT_REWARD / HEALTH_THRESHOLDS[-1][1] #scale penalty based on relative health
+TICK_REWARD = 1
+#SATURATION_REWARD = -MAX_ENEMY_PROXIMITY_REWARD
+
+
 
 # helper functions
-def checkMobHit(lifePrime, x, z):
+def checkMobHit(lifePrime):
 	try:
 		hit = (lifePrime < checkMobHit.life)
 		checkMobHit.life = lifePrime
@@ -92,7 +98,7 @@ def lookAtNearestEntity(entities):
     while difference > 180:
         difference -= 360;
     difference /= 180.0;
-    threshhold = 0.02
+    threshhold = 0.0
     if difference < threshhold and difference > 0:
     	difference = threshhold
     elif difference > -1*threshhold and difference < 0:
@@ -102,7 +108,7 @@ def lookAtNearestEntity(entities):
 
 #assumes there is a single mob near the agent. gets it x and z coordinates and returns the x and z coordinates relative to the agent
 def extractMobState(entities):
-    res = 4
+    #res = 4
     life = 0
     for entity in [EntityInfo(**k) for k in entities]:
         if entity.name == AGENT:
@@ -112,14 +118,18 @@ def extractMobState(entities):
             m_x = entity.x
             m_z = entity.z
             life = entity.life
-    x = round((m_x - a_x)*res) / res
-    z = round((m_z - a_z)*res) / res
+    x = round(m_x - a_x)
+    z = round(m_z - a_z)
     if ENABLE_ENEMY_DISTANCE_SATURATION:
         if abs(x) > ENEMY_DISTANCE_SATURATION_LEVEL:
             x = math.copysign(ENEMY_DISTANCE_SATURATION_LEVEL, x)
         if abs(z) > ENEMY_DISTANCE_SATURATION_LEVEL:
             z = math.copysign(ENEMY_DISTANCE_SATURATION_LEVEL, z)
     return life,x,z
+
+def extractHealthState(health):
+    for threshold,state in HEALTH_THRESHOLDS:
+        if health >= threshold: return state
 
 # this is where the rewards are counted and the state is determined
 def getState():
@@ -131,67 +141,49 @@ def getState():
         msg = world_state.observations[-1].text
         ob = json.loads(msg)
 
-       	healthState = ob[u'Life']
        	#check for hit here
-       	hit = checkHit(healthState)
+        health = ob[u'Life']
+       	hit = checkHit(health)
         mob_life, mob_x, mob_z = extractMobState(ob[u'entities'])
-        mob_hit = checkMobHit(mob_life, mob_x, mob_z)
+        mob_hit = checkMobHit(mob_life)
 
-        if not hasattr(getState, 'counter1'):
-        	getState.counter1 = 0;
-        	getState.counter2 = 0;
-
-        limit = 12
-        if hit:
-        	getState.counter1 = limit
-        else:
-        	getState.counter1 -= 1
-
-        if mob_hit:
-        	getState.counter2 = limit
-        else:
-        	getState.counter2 -= 1
-
-        if(getState.counter1 > 0):
-        	hitState = True
-        else:
-        	hitState = False
-
-        if(getState.counter2 > 0):
-        	mobHitState = True
-        else:
-        	mobHitState = False
-
-        s = State(mob_x, mob_z, hitState)
+        s = State(mob_x, mob_z, hit, mob_hit, extractHealthState(health))
     else:
         s = None
         ob = None
-        hit = None
-        mobHit = None
-    return s, ob, hit, mob_hit
+    return s, ob
 
 def isTerminal(state):
     return (state is None) or (not world_state.is_mission_running) or (checkHit.life <= 0.)  #or (state.x == 0. and state.z == 0.)
 
-def calculate_reward(state, s_prime, action, hit, mobHit):
+def calculate_reward(state, s_prime, action):
     reward = 0
-    if hit:
-    	reward = reward + DAMAGE_PENALTY
-    if mobHit:
-    	reward = reward + ENEMY_HIT_REWARD
+    if state.hit:
+    	reward += DAMAGE_REWARD * state.health
+    if state.mob_hit:
+    	reward += ENEMY_HIT_REWARD
     #health related rewards
     if checkHit.life <= 0.:
-        reward = reward + DEATH_PENALTY
+        reward += DEATH_REWARD
 
     #distance related rewards
-    if not (state.x == 0 and state.z == 0):
-        reward = reward + (MAX_ENEMY_PROXIMITY_REWARD / math.sqrt(state.x**2 + state.z**2))
+    state_distance = math.sqrt(state.x**2 + state.z**2)
+    prime_distance = math.sqrt(s_prime.x**2 + s_prime.z**2)
+    reward += PROXIMITY_REWARD * (prime_distance - state_distance)
+#    if not (state.x == 0 and state.z == 0):
+#        if abs(state.x) >= ENEMY_DISTANCE_SATURATION_LEVEL or abs(state.z) >= ENEMY_DISTANCE_SATURATION_LEVEL:
+#            reward += SATURATION_REWARD
+#        else:
+#            reward += (MAX_ENEMY_PROXIMITY_REWARD / math.sqrt(state.x**2 + state.z**2))
+#    else:
+#        reward += MAX_ENEMY_PROXIMITY_REWARD
 
     #movement related penalties
-    if action == "move " + str(MOVESPEED) and not hit:
-    	reward += 1
-    if action != "move " + str(MOVESPEED) and math.sqrt(state.x**2 + state.z**2) > ENEMY_DISTANCE_SATURATION_LEVEL:
-    	reward += -1
+    reward += TICK_REWARD
+    #if action == "move " + str(MOVESPEED) and not hit:
+    #	reward += 1
+    #if action != "move " + str(MOVESPEED) and math.sqrt(state.x**2 + state.z**2) > ENEMY_DISTANCE_SATURATION_LEVEL:
+    #	reward += -1
 
     global cumulative_reward
     cumulative_reward = cumulative_reward + reward
@@ -201,27 +193,31 @@ def do_action(state, action):
     global ticksElapsed
     ticksElapsed = ticksElapsed + 1
 
-    agent_host.sendCommand("move 0")
-    agent_host.sendCommand("strafe 0")
-    agent_host.sendCommand(action)
+    #if "strafe" in action and SIDE_ATTACK:
+    #    agent_host.sendCommand("attack 1")
 
-    if "strafe" in action and SIDE_ATTACK:
-        agent_host.sendCommand("attack 1")
-
-    s_prime, ob, hit, mobHit = getState()
+    s_prime, ob = getState()
     if not state is None:
-        reward = calculate_reward(state, s_prime, action, hit, mobHit)
-        
+
+        # turn towards the nearest zombie
+        lookAtNearestEntity([EntityInfo(**k) for k in ob[u'entities']])
+
+        # take action
+        agent_host.sendCommand("move 0")
+        agent_host.sendCommand("strafe 0")
+        agent_host.sendCommand(action)
+
+        reward = calculate_reward(state, s_prime, action)
+
         #automatically spawn a new mob if there is none
-        a = ( int(random.random() * 4) % 4)
         if(countMobs([EntityInfo(**k) for k in ob[u'entities']]) == 0): #summon mobs if their are no more on the field
+            a = ( int(random.random() * 4) % 4)
             agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[a][0], MOB_START_LOCATION[a][1], MOB_START_LOCATION[a][2], "{IsBaby:0}")) #summon mob
             global killCount
             killCount = killCount + 1
             time.sleep(0.3)
-        
-        # turn towards the nearest zombie
-        lookAtNearestEntity([EntityInfo(**k) for k in ob[u'entities']])
+
+
 
         #taunt enemy
         x = random.random()
@@ -235,7 +231,7 @@ def do_action(state, action):
 
     else:
         reward = 0
-
+    time.sleep(ACTION_DELAY)
     return reward, s_prime, actions
 
 def load_mission(fileName):
@@ -307,7 +303,7 @@ if __name__ == "__main__":
     start_mission(agent_host, my_mission, my_mission_record) #start mission
     world_state = agent_host.getWorldState()
     i = 0
-    e = 0.2
+    e = EPSILON
     while world_state.is_mission_running and i < DEFAULT_NUM_TRIALS:
     	print "epsilon: {}".format(e)
     	#summon a mob in a random corner
@@ -316,7 +312,7 @@ if __name__ == "__main__":
         time.sleep(0.3)
 
         #start of SARSA
-        s,_,_,_ = getState()
+        s,_ = getState()
         q_table = perform_trial(s, actions, do_action, isTerminal, q_table, epsilon = e)
         print "Trial {} finished.".format(i+1)
         world_state = agent_host.getWorldState()
@@ -337,7 +333,7 @@ if __name__ == "__main__":
         start_mission(agent_host, my_mission, my_mission_record) #restart mission
         world_state = agent_host.getWorldState()
         i += 1
-        e *= 0.85
+        #e *= 0.85
 
     with open(STATISTICS_OUTPUT_FILE, 'w') as f:
         for r in rewards:
