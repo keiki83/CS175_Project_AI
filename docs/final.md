@@ -71,12 +71,9 @@ Taking the previous two evaluations into consideration, produces the primary eva
 ![Graph of KPA](kpa.jpg)
 
 ### Analysis
-Evaluating the three afformentioned graphs above, gives insight into the behavior of the agent. Based on the data collected, the agent during the initial 100 rounds has an effectivness of about 0.8% or 1 kill per 125 moves. As the agent continues to learn, the agent has an effectivness of about 1% during the last 100 rounds or 1 kill per 100 moves. The agent improved its ability to acquire kills by 25% or alternatively, reduced inefficient moves by 20%.
+Evaluating the three afformentioned graphs above, gives insight into the behavior of the agent. The agent is making noticeable improvement to its policy for combating zombies. The agent is surviving for longer periods of time as shown in the increase in figure 2. During this longer suvival time, the agent is also able to acquire more zombies kills based on the increase in figure 1. Figure 3 indicates the agent is effectively balancing survival with kills.
 
-Based on the afformentioned information, the agent is making noticeable improvement to its policy for combating zombies.
-
-
-
+Based on the data collected, the agent during the initial 100 rounds has an effectivness of about 0.8% or 1 kill per 125 moves. As the agent continues to learn, the agent has an effectivness of about 1% during the last 100 rounds or 1 kill per 100 moves. The agent improved its ability to acquire kills by 25% or alternatively, reduced inefficient moves by 20%.
 
 ## References
 <!--- References: Make a list of work you’re citing in your description above (starting with a level-two header).
