@@ -41,7 +41,7 @@ and equations as much as possible. --->
 We started our approach by having the agent continously swing his sword, which allowed us to simplify the statespace and actions for the agent. The agent was only responsible for moving in the minecraft arena. For this, we chose to use finite movement. Later, our approach changed and we switched to continuous movement and required the agent to learn to swing his sword. This provided more interesting interactions with zombies as well as noticable improvement to the policy over the duration of subsequent rounds, as explained later.
 
 ### Finite Movement
-![Finite Movement](directional_movement.jpg) 
+![Finite Movement](directional_movement.jpg)
 
 During the finite movement approach, our agent was simple. He was only able to move north, south, east, and west or stand still as shown in the image. Trying to simplify the statespace to this degree caused some unforseen issues for us. The agent would get cornered easily while backing up which gave the zombie an advantage. The agent would only move in the two directions directly away from the zombie which lead it into a corner because the zombie was moving with continuous movement and would essentially control the agents direction. If the agent was not directly under attack, it would "bounce" around on the movement grid while figuring how to get to the zombie. It did not seem realistic for a human player and we moved away from this method.
 
@@ -101,3 +101,9 @@ Based on the data collected, the agent during the initial 100 rounds has an effe
 <!--- References: Make a list of work you’re citing in your description above (starting with a level-two header).
 This should include any papers you think are relevant, third-party source code you used, sources for any of
 the images that you didn’t create, and any other websites/links you found useful. --->
+* Zombie and Agent graphic http://minecraft.gamepedia.com
+* SARSA psuecode http://www.cse.unsw.edu.au/~cs9417ml/RL1/algorithms.html
+* SARSA research https://en.wikipedia.org/wiki/State-Action-Reward-State-Action
+* SARSA research http://artint.info/html/ArtInt_268.html
+* Deep Learning, Epislon-Greedy, Statespace http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf 
+* Project Malmo API http://microsoft.github.io/malmo/0.21.0/Documentation/index.html
