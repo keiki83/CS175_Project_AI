@@ -52,11 +52,17 @@ a few paragraphs to describe each type of evaluation that you perform. --->
 To evaluate the agent's ability to fight zombies, we broke the analysis into three parts; Kills, Actions, and Kills per Action. As the agent performed rounds of combat (a round is defined as the point from spawning in until death of agent), statistical data was gathered on the number of slain zombies and the actions performed by the agent on a per round basis. The data was written to a file and imported to Matlab for analysis.
 
 ### Kills
-Kills compares the number of zombie kills of sequential rounds. The higher the number of kills, the greater the long term leathality of the agent. This does not equate to effectiveness because the time of a round is based on how long the agent survived. Two cases are, the agent quickly killed zombies and died or ran around and did not kill many zombies. The duration of a round is shown in the next portion. 
+Kills compares the number of zombie kills of sequential rounds. The higher the number of kills, the greater the long term leathality of the agent. This does not equate to effectiveness because the time of a round is based on how long the agent survived. Two cases for example are the agent quickly killed zombies and died, or ran around and did not kill many zombies. 
+
+Figure 1 shows the tracked kills over the course of 500 rounds. Due to the complexity of combat, the outcomes can vary drastically between rounds. After plotting the data, a 1 degree polynomial best fit algorithm is used and graphed. As the figure indicates, the agent is able to attain more kills as the rounds progressed.
+
 ![Graph of Kills](kills.jpg)
 
 ### Actions
 Actions compares the number of actions made by the agent for a given round. The higher the number of actions, the longer the agent was able to survive. This does not display the leathality of the agent. The agent could be moving around or away from zombies the entire round. Each itteration of the SARSA algorithm produces an action carried out by the agent; move, attack, do nothing.
+
+Figure 2 shows the tracked actions over the course of 500 rounds. As with the data for kills, we plotted the data and applied a best fit graph. The agent is surviving longer as the rounds progress. The agent was lasting for approximately 250 actions during the beginning of the trails and approximately 750 actions during the latter portion. During the course of the learning, the agent is able to survive three times longer than when it started.
+
 ![Graph of Actions](actions.jpg)
 
 ### KPA (Kills Per Action)
@@ -65,7 +71,9 @@ Taking the previous two evaluations into consideration, produces the primary eva
 ![Graph of KPA](kpa.jpg)
 
 ### Analysis
-Evaluating the three afformentioned graphs above, gives insight into the behavior of the agent. Based on the data collected, the agent during the initial rounds (1-5) has an effectivness of about 1% or 1 kill per 100 moves. As the agent continues to learn, the agent has an effectivness of about 1.2% during rounds (16-20) or 1 kill per 83 moves. The agent improved its ability to acquire kills by 20% or alternatively, reduced inefficient moves by 17%.
+Evaluating the three afformentioned graphs above, gives insight into the behavior of the agent. Based on the data collected, the agent during the initial 100 rounds has an effectivness of about 0.8% or 1 kill per 125 moves. As the agent continues to learn, the agent has an effectivness of about 1% during the last 100 rounds or 1 kill per 100 moves. The agent improved its ability to acquire kills by 25% or alternatively, reduced inefficient moves by 20%.
+
+Based on the afformentioned information, the agent is making noticeable improvement to its policy for combating zombies.
 
 
 
