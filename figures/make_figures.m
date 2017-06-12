@@ -1,8 +1,8 @@
-filenames = ["Action", "Kill", "Reward"];
+filenames = ["Reward", "Action", "Kill"];
 average_length = 50;
-for filename = filenames
+for index = 1:length(filenames)
     figure()
-    y = dlmread([char(filename), '_statistics.txt']).';
+    y = dlmread([char(filenames(index)), '_statistics.txt']).';
     x = 1:length(y);
     avg = zeros(size(x));
     rolling_avg = zeros(size(x));
@@ -22,7 +22,7 @@ for filename = filenames
     l_avg = 'mean';
     l_roll = [num2str(average_length), '-trial mean'];
     
-    p_raw = plot(x,y,'color', char(c(1)));
+    p_raw = plot(x,y,'.','color', char(c(1)));
     legend(l_raw);
     hold on
     p_avg = plot(x,avg,'DisplayName',l_avg, 'color', char(c(2)), 'LineWidth',2);
@@ -33,6 +33,7 @@ for filename = filenames
     
     
     xlabel('Trials')
-    ylabel(char(filename))
-    print(char(filename), '-dpng')
+    ylabel(char(filenames(index)))
+    title(['Figure ', num2str(index)])
+    print(char(filenames(index)), '-dpng')
 end
