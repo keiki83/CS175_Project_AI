@@ -5,39 +5,50 @@ import time
 import random
 import json
 import math
+import cPickle as pickle
 from sarsa import perform_trial
 from collections import namedtuple
 
 
-State = namedtuple('State', 'x, z, hit, mob_hit, health')
+State = namedtuple('State', 'distance, hit, mob_hit, health, air')
 EntityInfo = namedtuple('EntityInfo', 'x, y, z, yaw, pitch, name, colour, variation, quantity, life')
 EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, 0)
 
 
 # trial parameters
-DEFAULT_NUM_TRIALS = 500
-EPSILON = 0.1
+DEFAULT_NUM_TRIALS = 1000
+EPSILON = 0.15
+ALPHA = 0.2
+GAMMA = 0.9
 AGENT = "Gladiator"
 DEFAULT_MISSION = "arena2.xml"
 SIDE_ATTACK = True
-HEALTH_CRITICAL_LEVEL = 10.
 ENABLE_ENEMY_DISTANCE_SATURATION = True
 ENEMY_DISTANCE_SATURATION_LEVEL = 10
-STATISTICS_OUTPUT_FILE = "statistics.txt"
+STATISTICS_OUTPUT_FILE = "_statistics.txt"
+STATISTICS = {"reward":0, "kill":0, "action":0}
 QTABLE_FILENAME = "q_table.p"
 MOB_TYPE = "Zombie"
 MOB_START_LOCATION = [(8,64,8),(-8,64,8),(8,64,-8),(-8,64,-8)]
-MOVESPEED = 1.0
+MOVESPEED = 0.5
 ACTION_DELAY = 0.1
+SPAWN_DELAY = 0.5
 HEALTH_THRESHOLDS = ((20., 0), (15., 1), (10., 2), (5., 3), (0., 4))
 actions = ["move " + str(MOVESPEED) , "move " + str(-1*MOVESPEED), "strafe " + str(MOVESPEED), "strafe " + str(-1*MOVESPEED), "attack 1"]
-air_actions = {actions[0]:1, actions[1]:2, actions[2]:4, actions[3]:8}
+#translate actions to front=1/back=2/left=4/right=8 to correspond w/air
+air_actions = {actions[0]:1, actions[3]:2, actions[2]:4, actions[1]:8}
+air_indices = { "north":{1:1, 3:4, 5:8, 7:2},
+                "south":{1:2, 3:8, 5:4, 7:1},
+                "west":{1:8, 3:1, 5:2, 7:4},
+                "east":{1:4, 3:2, 5:1, 7:8} }
+
 # rewards
-DEATH_REWARD = -50.
+DEATH_REWARD = -0.
 PROXIMITY_REWARD = 10
-ENEMY_HIT_REWARD = 25
+ENEMY_HIT_REWARD = 30
 DAMAGE_REWARD = -ENEMY_HIT_REWARD / HEALTH_THRESHOLDS[-1][1] #scale penalty based on relative health
-TICK_REWARD = 1
+WALL_REWARD = -10
+TICK_REWARD = 5
 #SATURATION_REWARD = -MAX_ENEMY_PROXIMITY_REWARD
 
 
@@ -77,6 +88,27 @@ def findUs(entities):
 		else:
 			return ent
 
+def normalize_yaw(yaw):
+    original_yaw = yaw
+    if yaw > 180.:
+        factor = math.floor((yaw + 180.) / 360.)
+    elif yaw < -180:
+        factor = math.ceil((yaw-180.) / 360.)
+    else:
+        return yaw
+    yaw -= 360. * factor
+    return yaw
+
+def yaw_to_dir(yaw):
+    if yaw >= -45. and yaw < 45:
+        return "south"
+    elif yaw >= 45. and yaw < 135.:
+        return "west"
+    elif yaw >= -135. and yaw < 45:
+        return "east"
+    else:
+        return "north"
+
 def lookAtNearestEntity(entities):
     us = findUs(entities)
     current_yaw = us.yaw
@@ -92,11 +124,11 @@ def lookAtNearestEntity(entities):
     if closestEntity == 0:
         return 0
     best_yaw = math.degrees(math.atan2(entities[closestEntity].z - us.z, entities[closestEntity].x - us.x)) - 90
-    difference = best_yaw - current_yaw;
-    while difference < -180:
-        difference += 360;
-    while difference > 180:
-        difference -= 360;
+    difference = normalize_yaw(best_yaw - current_yaw);
+    #while difference < -180:
+#        difference += 360;
+#    while difference > 180:
+#        difference -= 360;
     difference /= 180.0;
     threshhold = 0.0
     if difference < threshhold and difference > 0:
@@ -106,11 +138,18 @@ def lookAtNearestEntity(entities):
 
     agent_host.sendCommand("turn " + str(difference))
 
+def extractAirState(grid, yaw):
+    s = 0
+    for k,v in air_indices[yaw_to_dir(normalize_yaw(yaw))].items():
+        if grid[k] == u'air':
+            s = s + v
+    return s
+
 #assumes there is a single mob near the agent. gets it x and z coordinates and returns the x and z coordinates relative to the agent
 def extractMobState(entities):
     #res = 4
     life = 0
-    for entity in [EntityInfo(**k) for k in entities]:
+    for entity in entities:
         if entity.name == AGENT:
             m_x = a_x = entity.x
             m_z = a_z = entity.z
@@ -118,14 +157,13 @@ def extractMobState(entities):
             m_x = entity.x
             m_z = entity.z
             life = entity.life
-    x = round(m_x - a_x)
-    z = round(m_z - a_z)
+    distance = round(math.sqrt((m_x - a_x)**2 + (m_z - a_z)**2))
     if ENABLE_ENEMY_DISTANCE_SATURATION:
-        if abs(x) > ENEMY_DISTANCE_SATURATION_LEVEL:
-            x = math.copysign(ENEMY_DISTANCE_SATURATION_LEVEL, x)
-        if abs(z) > ENEMY_DISTANCE_SATURATION_LEVEL:
-            z = math.copysign(ENEMY_DISTANCE_SATURATION_LEVEL, z)
-    return life,x,z
+        if abs(distance) > ENEMY_DISTANCE_SATURATION_LEVEL:
+            distance = math.copysign(ENEMY_DISTANCE_SATURATION_LEVEL, distance)
+        #if abs(z) > ENEMY_DISTANCE_SATURATION_LEVEL:
+        #    z = math.copysign(ENEMY_DISTANCE_SATURATION_LEVEL, z)
+    return life,distance
 
 def extractHealthState(health):
     for threshold,state in HEALTH_THRESHOLDS:
@@ -140,14 +178,14 @@ def getState():
     if world_state.is_mission_running:
         msg = world_state.observations[-1].text
         ob = json.loads(msg)
-
+        entities = [EntityInfo(**k) for k in ob[u'entities']]
        	#check for hit here
         health = ob[u'Life']
        	hit = checkHit(health)
-        mob_life, mob_x, mob_z = extractMobState(ob[u'entities'])
+        mob_life, mob_distance = extractMobState(entities)
         mob_hit = checkMobHit(mob_life)
-
-        s = State(mob_x, mob_z, hit, mob_hit, extractHealthState(health))
+        air_state = extractAirState(ob[u'floorAll'], findUs(entities).yaw);
+        s = State(distance=mob_distance, hit=hit, mob_hit=mob_hit, health=extractHealthState(health), air=air_state)
     else:
         s = None
         ob = None
@@ -167,9 +205,10 @@ def calculate_reward(state, s_prime, action):
         reward += DEATH_REWARD
 
     #distance related rewards
-    state_distance = math.sqrt(state.x**2 + state.z**2)
-    prime_distance = math.sqrt(s_prime.x**2 + s_prime.z**2)
-    reward += PROXIMITY_REWARD * (prime_distance - state_distance)
+    reward += PROXIMITY_REWARD * (s_prime.distance - state.distance)
+    for k,v in air_actions.items():
+        if k == action and not v & state.air:
+            reward += WALL_REWARD
 #    if not (state.x == 0 and state.z == 0):
 #        if abs(state.x) >= ENEMY_DISTANCE_SATURATION_LEVEL or abs(state.z) >= ENEMY_DISTANCE_SATURATION_LEVEL:
 #            reward += SATURATION_REWARD
@@ -185,13 +224,28 @@ def calculate_reward(state, s_prime, action):
     #if action != "move " + str(MOVESPEED) and math.sqrt(state.x**2 + state.z**2) > ENEMY_DISTANCE_SATURATION_LEVEL:
     #	reward += -1
 
-    global cumulative_reward
-    cumulative_reward = cumulative_reward + reward
+    global STATISTICS
+    STATISTICS["reward"] += reward
+    #cumulative_reward = cumulative_reward + reward
     return reward
 
+def spawn_mob(agent):
+    min_index = 0
+    min_distance = float("inf")
+    valid_corners = MOB_START_LOCATION[:]
+    print('spawn_mob')
+    for x,y,z in valid_corners:
+        if abs(agent.x - x) <= 2 and abs(agent.z - z) <= 2:
+            valid_corners.remove((x,y,z))
+            print 'removed: ', (x,y,z)
+    location = random.choice(valid_corners)
+    agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, location[0], location[1], location[2], "{IsBaby:0}")) #summon mob
+    time.sleep(SPAWN_DELAY)
+
 def do_action(state, action):
-    global ticksElapsed
-    ticksElapsed = ticksElapsed + 1
+    global STATISTICS
+    STATISTICS["action"] += 1
+    #ticksElapsed = ticksElapsed + 1
 
     #if "strafe" in action and SIDE_ATTACK:
     #    agent_host.sendCommand("attack 1")
@@ -200,7 +254,8 @@ def do_action(state, action):
     if not state is None:
 
         # turn towards the nearest zombie
-        lookAtNearestEntity([EntityInfo(**k) for k in ob[u'entities']])
+        entities = [EntityInfo(**k) for k in ob[u'entities']]
+        lookAtNearestEntity(entities)
 
         # take action
         agent_host.sendCommand("move 0")
@@ -210,12 +265,14 @@ def do_action(state, action):
         reward = calculate_reward(state, s_prime, action)
 
         #automatically spawn a new mob if there is none
-        if(countMobs([EntityInfo(**k) for k in ob[u'entities']]) == 0): #summon mobs if their are no more on the field
-            a = ( int(random.random() * 4) % 4)
-            agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[a][0], MOB_START_LOCATION[a][1], MOB_START_LOCATION[a][2], "{IsBaby:0}")) #summon mob
-            global killCount
-            killCount = killCount + 1
-            time.sleep(0.3)
+        if(countMobs(entities) == 0): #summon mobs if their are no more on the field
+            us = findUs(entities)
+            spawn_mob(us)
+            #a = ( int(random.random() * 4) % 4)
+            #agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[a][0], MOB_START_LOCATION[a][1], MOB_START_LOCATION[a][2], "{IsBaby:0}")) #summon mob
+            #global killCount
+            STATISTICS["kill"] += 1
+            #killCount = killCount + 1
 
 
 
@@ -292,13 +349,17 @@ if __name__ == "__main__":
 
     # Main loop:
     # Loop until mission ends:
-    q_table = {}
-    rewards = []
-    cumulative_reward = 0.
-    kills = []
-    killCount = 0
-    times = []
-    ticksElapsed = 0
+    try :
+        q_table = pickle.load(open(QTABLE_FILENAME, "rb"))
+    except IOError as e:
+        print 'ERROR:', # coding=utf-8
+        q_table = {}
+    #rewards = []
+    #cumulative_reward = 0.
+    #kills = []
+    #killCount = 0
+    #times = []
+    #ticksElapsed = 0
 
     start_mission(agent_host, my_mission, my_mission_record) #start mission
     world_state = agent_host.getWorldState()
@@ -307,43 +368,55 @@ if __name__ == "__main__":
     while world_state.is_mission_running and i < DEFAULT_NUM_TRIALS:
     	print "epsilon: {}".format(e)
     	#summon a mob in a random corner
-    	a = (int(random.random() * 4) % 4)
-        agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[a][0], MOB_START_LOCATION[a][1], MOB_START_LOCATION[a][2], "{IsBaby:0}")) #summon mob
-        time.sleep(0.3)
+
+
 
         #start of SARSA
-        s,_ = getState()
-        q_table = perform_trial(s, actions, do_action, isTerminal, q_table, epsilon = e)
+        s,ob = getState()
+
+        spawn_mob(findUs([EntityInfo(**k) for k in ob[u'entities']]))
+
+        #a = (int(random.random() * 4) % 4)
+        #agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[a][0], MOB_START_LOCATION[a][1], #MOB_START_LOCATION[a][2], "{IsBaby:0}")) #summon mob
+
+        q_table = perform_trial(s, actions, do_action, isTerminal, q_table, epsilon = e, alpha=ALPHA, gamma=GAMMA)
         print "Trial {} finished.".format(i+1)
         world_state = agent_host.getWorldState()
         if world_state.is_mission_running:
             agent_host.sendCommand("quit")
 
-        #get statistics here
-        rewards.append(cumulative_reward)
-        kills.append(killCount)
-        times.append(ticksElapsed)
-        print "Cumulative reward: {}".format(cumulative_reward)
-        print "Kill count: {}".format(killCount)
-        print "Actions performed: {}".format(ticksElapsed)
-        cumulative_reward = 0.
-        killCount = 0
-        ticksElapsed = 0
-        time.sleep(1)
+        #get STATISTICS here
+        #rewards.append(cumulative_reward)
+        #kills.append(killCount)
+        #times.append(ticksElapsed)
+        #print "Cumulative reward: {}".format(cumulative_reward)
+        #print "Kill count: {}".format(killCount)
+        #print "Actions performed: {}".format(ticksElapsed)
+        pickle.dump(q_table, open(QTABLE_FILENAME, "wb"))
+        for k,v in STATISTICS.items():
+            print k + ":", v
+            with open(k + STATISTICS_OUTPUT_FILE, "a") as f:
+                f.write("{} ".format(v))
+            STATISTICS[k] = 0
+        #cumulative_reward = 0.
+        #killCount = 0
+        #ticksElapsed = 0
         start_mission(agent_host, my_mission, my_mission_record) #restart mission
         world_state = agent_host.getWorldState()
         i += 1
         #e *= 0.85
 
-    with open(STATISTICS_OUTPUT_FILE, 'w') as f:
-        for r in rewards:
-            f.write("{} ".format(r))
-        f.write("\n")
-        for k in kills:
-            f.write("{} ".format(k))
-        f.write("\n")
-        for t in times:
-        	f.write("{} ".format(t))
+
+
+#    with open(STATISTICS_OUTPUT_FILE, 'w') as f:
+#        for r in rewards:
+#            f.write("{} ".format(r))
+#        f.write("\n")
+#        for k in kills:
+#            f.write("{} ".format(k))
+#        f.write("\n")
+#        for t in times:
+#        	f.write("{} ".format(t))
 
     # mission has ended.
     for error in world_state.errors:
