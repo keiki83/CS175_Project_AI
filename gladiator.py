@@ -17,7 +17,8 @@ EntityInfo.__new__.__defaults__ = (0, 0, 0, 0, 0, "", "", "", 1, 0)
 
 # trial parameters
 DEFAULT_NUM_TRIALS = 1000
-EPSILON = 0.15
+EPSILON = 0.5
+EPSILON_DECAY = 0.99
 ALPHA = 0.2
 GAMMA = 0.9
 AGENT = "Gladiator"
@@ -30,9 +31,11 @@ STATISTICS = {"reward":0, "kill":0, "action":0}
 QTABLE_FILENAME = "q_table.p"
 MOB_TYPE = "Zombie"
 MOB_START_LOCATION = [(8,64,8),(-8,64,8),(8,64,-8),(-8,64,-8)]
-MOVESPEED = 0.5
+MOB_SPAWN_DISTANCE_LIMIT = 4
+MOVESPEED = 0.6
 ACTION_DELAY = 0.1
 SPAWN_DELAY = 0.5
+TURN_RATE_SCALE = 90.
 HEALTH_THRESHOLDS = ((20., 0), (15., 1), (10., 2), (5., 3), (0., 4))
 actions = ["move " + str(MOVESPEED) , "move " + str(-1*MOVESPEED), "strafe " + str(MOVESPEED), "strafe " + str(-1*MOVESPEED), "attack 1"]
 #translate actions to front=1/back=2/left=4/right=8 to correspond w/air
@@ -129,7 +132,7 @@ def lookAtNearestEntity(entities):
 #        difference += 360;
 #    while difference > 180:
 #        difference -= 360;
-    difference /= 180.0;
+    difference /= TURN_RATE_SCALE;
     threshhold = 0.0
     if difference < threshhold and difference > 0:
     	difference = threshhold
@@ -233,11 +236,9 @@ def spawn_mob(agent):
     min_index = 0
     min_distance = float("inf")
     valid_corners = MOB_START_LOCATION[:]
-    print('spawn_mob')
     for x,y,z in valid_corners:
-        if abs(agent.x - x) <= 2 and abs(agent.z - z) <= 2:
+        if abs(agent.x - x) <= MOB_SPAWN_DISTANCE_LIMIT and abs(agent.z - z) <= MOB_SPAWN_DISTANCE_LIMIT:
             valid_corners.remove((x,y,z))
-            print 'removed: ', (x,y,z)
     location = random.choice(valid_corners)
     agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, location[0], location[1], location[2], "{IsBaby:0}")) #summon mob
     time.sleep(SPAWN_DELAY)
@@ -317,7 +318,7 @@ def start_mission(agent_host, mission, mission_record):
     		else:
     			time.sleep(2)
     # Loop until mission starts:
-    print "Waiting for the mission to start ",
+    print "\nWaiting for the mission to start ",
     world_state = agent_host.getWorldState()
     while not world_state.has_mission_begun:
     	sys.stdout.write(".")
@@ -325,9 +326,7 @@ def start_mission(agent_host, mission, mission_record):
     	world_state = agent_host.getWorldState()
     	for error in world_state.errors:
     		print "Error:",error.text
-
-    print
-    print "Mission running ",
+    print "\nMission running\n"
 
 
 
@@ -352,8 +351,8 @@ if __name__ == "__main__":
     try :
         q_table = pickle.load(open(QTABLE_FILENAME, "rb"))
     except IOError as e:
-        print 'ERROR:', # coding=utf-8
         q_table = {}
+        print 'ERROR:', e
     #rewards = []
     #cumulative_reward = 0.
     #kills = []
@@ -364,22 +363,21 @@ if __name__ == "__main__":
     start_mission(agent_host, my_mission, my_mission_record) #start mission
     world_state = agent_host.getWorldState()
     i = 0
-    e = EPSILON
     while world_state.is_mission_running and i < DEFAULT_NUM_TRIALS:
-    	print "epsilon: {}".format(e)
-    	#summon a mob in a random corner
+    	#print "epsilon: {}".format(e)
+
 
 
 
         #start of SARSA
         s,ob = getState()
-
+        #summon a mob in a random corner
         spawn_mob(findUs([EntityInfo(**k) for k in ob[u'entities']]))
 
         #a = (int(random.random() * 4) % 4)
         #agent_host.sendCommand("chat /summon {0} {1} {2} {3} {4}".format(MOB_TYPE, MOB_START_LOCATION[a][0], MOB_START_LOCATION[a][1], #MOB_START_LOCATION[a][2], "{IsBaby:0}")) #summon mob
 
-        q_table = perform_trial(s, actions, do_action, isTerminal, q_table, epsilon = e, alpha=ALPHA, gamma=GAMMA)
+        q_table = perform_trial(s, actions, do_action, isTerminal, q_table, epsilon = EPSILON, alpha=ALPHA, gamma=GAMMA)
         print "Trial {} finished.".format(i+1)
         world_state = agent_host.getWorldState()
         if world_state.is_mission_running:
@@ -392,6 +390,7 @@ if __name__ == "__main__":
         #print "Cumulative reward: {}".format(cumulative_reward)
         #print "Kill count: {}".format(killCount)
         #print "Actions performed: {}".format(ticksElapsed)
+        EPSILON *= EPSILON_DECAY
         pickle.dump(q_table, open(QTABLE_FILENAME, "wb"))
         for k,v in STATISTICS.items():
             print k + ":", v
