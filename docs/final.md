@@ -25,7 +25,11 @@ particular, make sure that the problem is clearly defined here, and feel free to
 the task. Part of the evaluation will be on how well you are able to motivate the challenges of the problem,
 i.e. why is it not trivial, and why you need AI/ML algorithms to solve it. --->
 
+The goal of Project Gladiator is to create an agent capable of fighting zombies in minecraft. For a human player, this does not seem like a daunting task. "Grab your sword and start swinging" as my friend once stated, but teaching a computer to do this is entirely different. Taking the approach of my friend, an agent could use a shortest path algorithm with continuous sword swinging. This would result in a swift death, a player has a general idea of when to stop attacking and run away. No consideration is put into how to survive against the zombie swinging back. This becomes a challenge for the agent.
 
+Considering the afformentioned methods of combat, we choose to use SARSA (State Action Reward State Action) algorithm for a Markov Decision Process. The game world can be broken down into a series of episodes with information based on the current state similar to how a player would evaluate the situation. Consideration is put into the players health, the distance of the zombie, etc. The player then decides if an attack should be attempted or if backing away is more viable. From a top-down view of the sarsa algorithm and the player, they will be doing indentical things, with the exception that a human player has intuition. The agent, well he has his q_table.
+
+With sword and q_table in hand, we sent our gladitor into combat with zombies to find out if he is capable of learning to fight.
 
 ## Approaches
 <!--- Approaches: Use another level-two header called Approaches, In this section, describe both the baselines
@@ -34,13 +38,31 @@ for example, why one might be more accurate, need less data, take more time, ove
 enough technical information to be able to (mostly) reproduce your project, in particular, use pseudocode
 and equations as much as possible. --->
 
-
+We started our approach by having the agent continously swing his sword, which allowed us to simplify the statespace and actions for the agent. The agent was only responsible for moving in the minecraft arena. For this, we chose to use finite movement. Later, our approach changed and we switched to continuous movement and required the agent to learn to swing his sword. This provided more interesting interactions with zombies as well as noticable improvement to the policy over the duration of subsequent rounds, as explained later.
 
 ### Finite Movement
-![Finite Movement](directional_movement.jpg)
+![Finite Movement](directional_movement.jpg) 
+
+During the finite movement approach, our agent was simple. He was only able to move north, south, east, and west or stand still as shown in the image. Trying to simplify the statespace to this degree caused some unforseen issues for us. The agent would get cornered easily while backing up which gave the zombie an advantage. The agent would only move in the two directions directly away from the zombie which lead it into a corner because the zombie was moving with continuous movement and would essentially control the agents direction. If the agent was not directly under attack, it would "bounce" around on the movement grid while figuring how to get to the zombie. It did not seem realistic for a human player and we moved away from this method.
 
 ### Continuous Movement
 ![Continuous Movement](strafe_movement.jpg)
+
+The improvement for the finite movement was continuous movement. The agent was no longer bound to the grid of blocks within the minecraft world and could move openly. The agent has the choice to stand still, move forward, move backwards, or strafe left and right. During this implementation, we added sword swinging to the agents actions. The result was a more human looking combat and was less erratic. 
+
+### Statespace and Actions
+The statespace went through many versions during the project. Determinging what to include and exclude from the statespace became vital to the agent's ability to understand the world around it. Initial attempts tracked the blocks around the agent and the approximate location of the zombie. The actions for this state were finite movement with auto attacks. Subsequent versions added and subtracted to the statespace and actions. Blocks were removed in favor of distance tracking using the difference between agent and zombie on the x and z axis, and attacks were added to actions in favor of auto attacking. 
+
+The final form of the statespace was far larger than any of the previous versions. We tracked the health of the agent in brackets of 20% health. Air blocks were added to give a penalty to the agent for moving into a wall. If the agent or mob landed a hit, it was noted in the statespace. The distance to the zombie from the agent was tracked by euclidian distance. The agent's movement was forward and backswards, strafe, and attack. We removed the option to do nothing because there is a possible action that will always give a better reward than do nothing and was obsolete.
+
+### Rewards
+The reward system dictates the behavior of the agent. We wanted the agent to be aggressive while being defensive simultaneously. The reward system went thru many variations during the project. At first, the agent wasn't incentivised enough to seek out zombies. It was content with wondering around until a zombie threatented it. The latest version gives the agent a reward to staying alive but a greater reward for seeking out an enemy. Attacking a zombie with the sword (agent's only method for damaging the enemy) gives the greatest reward. Survivability uses an equation to calculate the reward because based on the agent's health, attacking an enemy would be better with high health than backing away. The tick reward also influences the survivability of the agent for subsequent trials. Backing away is better if at low health when taking a hit from a zombie. Moving into a wall is penalized because the agent can not enter the wall. The agent was not penalized for death in our model because the agent only had one life to live.
+
+* PROXIMITY_REWARD = 10
+* ENEMY_HIT_REWARD = 30
+* DAMAGE_REWARD = -ENEMY_HIT_REWARD / HEALTH_THRESHOLDS[-1][1] #scale penalty based on relative health
+* WALL_REWARD = -10
+* TICK_REWARD = 5
 
 ## Evaluation
 <!--- Evaluation: An important aspect of your project, as I’ve mentioned several times now, is evaluating your
