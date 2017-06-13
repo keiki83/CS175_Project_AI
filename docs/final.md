@@ -92,8 +92,13 @@ Taking the previous two evaluations into consideration, produces the primary eva
 
 ![Graph of KPA](kpa.jpg)
 
+### Rewards
+Rewards tracks the total rewards calculated during a given round. This allows us to evaluate if the agents actions between episodes allows the agent to learn to fight zombies better based on our rewards heuristic. Figure 4 alone is not an indicator of how well the agent is progressing because this is a measure of how well it is able to get rewards based on how we have set their values. It does give insight when compared to zombie kills and/or actions. A high reward without the associated kills or survivability would mean the rewards need to be adjusted. A low reward describes a situation where the agent hasn't learned enough or that the rewards are too ambiguous. 
+
+![Graph of Rewards](rewards.jpg)
+
 ### Analysis
-Evaluating the three afformentioned graphs above, gives insight into the behavior of the agent. The agent is making noticeable improvement to its policy for combating zombies. The agent is surviving for longer periods of time as shown in the increase in figure 2. During this longer suvival time, the agent is also able to acquire more zombies kills based on the increase in figure 1. Figure 3 indicates the agent is effectively balancing survival with kills.
+Evaluating the three afformentioned graphs above, gives insight into the behavior of the agent. The agent is making noticeable improvement to its policy for combating zombies. The agent is surviving for longer periods of time as shown in the increase in figure 2. During this longer suvival time, the agent is also able to acquire more zombies kills based on the increase in figure 1. Figure 3 indicates the agent is effectively balancing survival with kills. The agents reward settings currently allow it to increase the number of kills and its survivability which correlates to the higher reward scores seen in figure 4.
 
 Based on the data collected, the agent during the initial 100 rounds has an effectivness of about 0.8% or 1 kill per 125 moves. As the agent continues to learn, the agent has an effectivness of about 1% during the last 100 rounds or 1 kill per 100 moves. The agent improved its ability to acquire kills by 25% or alternatively, reduced inefficient moves by 20%.
 
