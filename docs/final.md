@@ -98,24 +98,24 @@ a few paragraphs to describe each type of evaluation that you perform. --->
 
 To evaluate the agent's ability to fight zombies, we broke the analysis into three parts; Kills, Actions, and Cumulative Reward. As the agent performed rounds of combat (a round is defined as the point from spawning in until death of agent), statistical data was gathered on the number of slain zombies and the actions performed by the agent on a per round basis. The data was written to a file and imported to MATLAB for analysis.  Due to the nature of combat and the imprecise representation of the game world by our state space, certain situations in combat cause significant issues for the agent, particularly when the zombie can repeatedly knock the agent against the wall. We were not able to accurately model this situation and, as such, the data obtained had some significant amount of noise when this occurred.
 
-### Kills
-Kills compares the number of zombie kills of sequential rounds. The higher the number of kills, the greater the lethality of the agent. If our agent is effectively learning a policy, we expect to see a steady increase in the number of kills per round. Initially, we wanted to grant merit based on efficient killing, but moving to zombies quickly and killing many zombies conflicted and the agent performed quite poorly and could not learn an effective policy.
+### Cumulative Reward
+Cumulative rewards indicates total amount of rewards received during a given round. This allows us to evaluate whether our model and reward system actually encourage the agent to maximize rewards. Figure 4 alone is not an indicator of how well the agent is progressing because this is a measure of how well it is able to get rewards based on how we have set their values. It does give insight when compared to zombie kills and/or actions.  Along with raw score, we also plotted the overall mean and a shifting mean based on the most recent fifty trials.
 
-Figure 1 shows the tracked kills over the course of 500 rounds. After plotting the data, an overall mean and a moving mean tracked over the most recent 50 trials are both plotted. This shows that the agent was clearly improving at a consistent rate over the untrained model.
-
-![Graph of Kills](kill.png)
+![Graph of Rewards](reward.png)
 
 ### Actions
 Actions compares the number of actions made by the agent for a given round, which directly corresponds to agent lifetime. The higher the number of actions, the longer the agent was able to survive. Each time the SARSA algorithm produces an action to be carried out by the agent, the action count is incremented.
 
-Figure 2 shows the tracked actions over the course of 500 rounds. As with the data for kills, we plotted the data and applied an overall and a shifting mean. The agent is surviving longer as the rounds progress. The agent was lasting for approximately 250 actions during the beginning of the trails and approximately one thousand actions during the latter portion, sometimes as high as several thousand.
+Figure 2 shows the tracked actions over the course of 500 rounds. As with the data for rewards, we plotted the data and applied an overall and a shifting mean. The agent is surviving longer as the rounds progress. The agent was lasting for approximately 250 actions during the beginning of the trails and approximately one thousand actions during the latter portion, sometimes as high as several thousand.
 
 ![Graph of Actions](action.png)
 
-### Cumulative Reward
-Cumulative rewards indicates total amount of rewards received during a given round. This allows us to evaluate whether our model and reward system actually encourage the agent to maximize rewards. Figure 4 alone is not an indicator of how well the agent is progressing because this is a measure of how well it is able to get rewards based on how we have set their values. It does give insight when compared to zombie kills and/or actions.
+### Kills
+Kills compares the number of zombie kills of sequential rounds. The higher the number of kills, the greater the lethality of the agent. If our agent is effectively learning a policy, we expect to see a steady increase in the number of kills per round. Initially, we wanted to grant merit based on efficient killing, but moving to zombies quickly and killing many zombies conflicted and the agent performed quite poorly and could not learn an effective policy.
 
-![Graph of Rewards](reward.jpg)
+Figure 3 shows the tracked kills over the course of 500 rounds. After plotting the data, we again plotted the overall mean and a moving mean. This shows that the agent was clearly improving at a consistent rate over the untrained model.
+
+![Graph of Kills](kill.png)
 
 ### Analysis
 Evaluating the three figures above gives insight into the behavior of the agent. As can be seen, the mean rewards, kills, and actions have a similar shape which is consistently trending upward. This suggests that not only did our agent learn to increase its reward effectively, this directly translated to increased lifetime and increased total zombie kills as intended. The agent is making noticeable improvement to its policy for combating zombies. The agent is surviving for longer periods of time as shown in the increase in figure 2. During this longer survival time, the agent is also able to acquire more zombies kills based on the increase in figure 1. This shows that the agent is effectively balancing survival with kills.
