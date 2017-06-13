@@ -14,9 +14,7 @@ a run that is your best. You are free to include more details, such as summary o
 the failure cases, but it is not needed. The video should be a maximum of three minutes (less is fine), of
 reasonably high quality, i.e. a minimum resolution of 1200 × 720 (i.e. 720p), and speech, if any, should be
 comprehensible. --->
-
-<!--- placeholder until I upload final video --->
-[![Video](https://img.youtube.com/vi/XQKkRI_ZEMI/0.jpg)](https://www.youtube.com/watch?v=XQKkRI_ZEMI)
+[![Video](https://img.youtube.com/vi/UaBpYEnZBQs/0.jpg)](https://www.youtube.com/watch?v=UaBpYEnZBQs)
 
 ## Project Summary
 <!--- Project Summary: Use another level-two header to start a Project Summary section. Write a few paragraphs
@@ -107,7 +105,7 @@ Based on the data collected, the agent during the initial 100 rounds has an effe
 This should include any papers you think are relevant, third-party source code you used, sources for any of
 the images that you didn’t create, and any other websites/links you found useful. --->
 * Zombie and Agent graphic http://minecraft.gamepedia.com
-* SARSA psuecode http://www.cse.unsw.edu.au/~cs9417ml/RL1/algorithms.html
+* SARSA psuedocode http://www.cse.unsw.edu.au/~cs9417ml/RL1/algorithms.html
 * SARSA research https://en.wikipedia.org/wiki/State-Action-Reward-State-Action
 * SARSA research http://artint.info/html/ArtInt_268.html
 * Deep Learning, Epislon-Greedy, Statespace http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf 
