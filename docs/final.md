@@ -104,9 +104,9 @@ Based on the data collected, the agent during the initial 100 rounds has an effe
 <!--- References: Make a list of work you’re citing in your description above (starting with a level-two header).
 This should include any papers you think are relevant, third-party source code you used, sources for any of
 the images that you didn’t create, and any other websites/links you found useful. --->
-* Zombie and Agent graphic ![http://minecraft.gamepedia.com](http://minecraft.gamepedia.com)
-* SARSA psuedocode ![http://www.cse.unsw.edu.au/~cs9417ml/RL1/algorithms.html](http://www.cse.unsw.edu.au/~cs9417ml/RL1/algorithms.html)
-* SARSA research ![https://en.wikipedia.org/wiki/State-Action-Reward-State-Action](https://en.wikipedia.org/wiki/State-Action-Reward-State-Action)
-* SARSA research ![http://artint.info/html/ArtInt_268.html](http://artint.info/html/ArtInt_268.html)
-* Deep Learning, Epislon-Greedy, Statespace ![http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf](http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf)
-* Project Malmo API ![http://microsoft.github.io/malmo/0.21.0/Documentation/index.html](http://microsoft.github.io/malmo/0.21.0/Documentation/index.html)
+* Zombie and Agent graphic [http://minecraft.gamepedia.com](http://minecraft.gamepedia.com)
+* SARSA psuedocode [http://www.cse.unsw.edu.au/~cs9417ml/RL1/algorithms.html](http://www.cse.unsw.edu.au/~cs9417ml/RL1/algorithms.html)
+* SARSA research [https://en.wikipedia.org/wiki/State-Action-Reward-State-Action](https://en.wikipedia.org/wiki/State-Action-Reward-State-Action)
+* SARSA research [http://artint.info/html/ArtInt_268.html](http://artint.info/html/ArtInt_268.html)
+* Deep Learning, Epislon-Greedy, Statespace [http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf](http://cs229.stanford.edu/proj2016/report/UdagawaLeeNarasimhan-FightingZombiesInMinecraftWithDeepReinforcementLearning-report.pdf)
+* Project Malmo API [http://microsoft.github.io/malmo/0.21.0/Documentation/index.html](http://microsoft.github.io/malmo/0.21.0/Documentation/index.html)
